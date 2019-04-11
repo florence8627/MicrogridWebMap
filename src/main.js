@@ -1,41 +1,96 @@
 //togetherjs config //
 TogetherJSConfig_cloneClicks = "#info-panel";
 
+let global_max;
+let global_min;
+let global_mean;
+let bearing = 0;
+const building_no = [1,2,3,4,5,50,6,61,67,68,7,73,84,87,88,89,90,9,92,62];
+let buildings = [];
 
-// map box tile layer
-const tiles_dark = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
-    id: 'mapbox.dark',
-    maxZoom:30,
-    accessToken: 'pk.eyJ1IjoiZmxvcmVuY2U4NjI3IiwiYSI6ImNqb294Mmk1MTAzcGQzcG14cXpqZHh1YmMifQ.ahUeysh9RSQJ4jegcGrr4w'
+const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
+	const upd = selection.selectAll('path.building').data(buildings);
+	
+	const updEnter = upd.enter()
+		.append('path')
+		.classed('building', true)
+
+	updEnter.append('title');
+
+	upd
+		.classed('phaseN', (d) => d.properties.phase_1 !== 'yes')
+		.attr('id', (d) => d.properties.name)
+		.attr('d', proj.pathFromGeojson)
+		.attr('stroke-width', 1 / proj.scale);
+	upd
+		.select('title')
+		.text((d) => `${d.properties.name.toUpperCase()}: ${d.properties.other_tags}`);
+
+	upd.exit().remove();
 });
 
-const tiles_satellite = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
-    id: 'mapbox.streets-satellite',
-    maxZoom:30,
-    accessToken: 'pk.eyJ1IjoiZmxvcmVuY2U4NjI3IiwiYSI6ImNqb294Mmk1MTAzcGQzcG14cXpqZHh1YmMifQ.ahUeysh9RSQJ4jegcGrr4w'
-});
+const map = createMap();
 
-var bearing = 0;
-const map = L.map("map-canvas", {
-	center: [-37.9109, 145.1344], 
-	zoom: 17,
-	minZoom: 10,
-	maxZoom: 30,
-	zoomSnap: 0.0,
-	zoomDelta:0.1,
-	rotate: false,
-	zoomControl: false,
-	touchZoom: false,
-	touchRotate: false,
-	boxZoom: false,
-	doubleClickZoom: false,
-	dragging: false,
-	keyboard: false,
-	scrollWheelZoom: false,
-	layers: [tiles_satellite,tiles_dark]
-});
+function createMap() {
+	// map box tile layer
+	const tiles_dark = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+		id: 'mapbox.dark',
+		maxZoom:30,
+		accessToken: 'pk.eyJ1IjoiZmxvcmVuY2U4NjI3IiwiYSI6ImNqb294Mmk1MTAzcGQzcG14cXpqZHh1YmMifQ.ahUeysh9RSQJ4jegcGrr4w'
+	});
+
+	const tiles_satellite = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+		id: 'mapbox.streets-satellite',
+		maxZoom:30,
+		accessToken: 'pk.eyJ1IjoiZmxvcmVuY2U4NjI3IiwiYSI6ImNqb294Mmk1MTAzcGQzcG14cXpqZHh1YmMifQ.ahUeysh9RSQJ4jegcGrr4w'
+	});
+
+	
+	const map = L.map("map-canvas", {
+		center: [-37.9109, 145.1344], 
+		zoom: 17,
+		minZoom: 10,
+		maxZoom: 30,
+		zoomSnap: 0.0,
+		zoomDelta:0.1,
+		rotate: false,
+		zoomControl: false,
+		touchZoom: false,
+		touchRotate: false,
+		boxZoom: false,
+		doubleClickZoom: false,
+		dragging: false,
+		keyboard: false,
+		scrollWheelZoom: false,
+		layers: [tiles_satellite,tiles_dark]
+	});
+
+	
+	const baseMaps = {
+		"Satelite": tiles_satellite,
+		"Symbolic": tiles_dark
+	};
+	const overlayMaps = {
+		"Buildings": buildingsOverlay
+	};
+	L.control.layers(baseMaps, overlayMaps).addTo(map);
+	L.control.scale().addTo(map);
+	map.addControl(new L.Control.Fullscreen());
+	L.control.ruler({
+		lengthUnit:{
+			factor: 1000,
+			decimal: 2,
+			display:'meters',
+			label:'Distance'
+		}
+	}).addTo(map);
+	
+	return map;
+}
+
+
 
 
 //adding pattern definition
@@ -46,60 +101,19 @@ d3.select("svg").append('defs').append("pattern")
 							    .attr('stroke', '#000000')
 							    .attr('stroke-width', 0.2)
 							    .attr('fill','none');
-var buildings = [];
 
 
-const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
-    const upd = selection.selectAll('path').data(buildings);
-    
-    upd.enter()
-        .append('path')
-        .filter(function(d){return d.properties.phase_1 == 'yes'})
-        .attr("id", function (d) {return d.properties.name})
-        .attr('d', proj.pathFromGeojson)   
-        .attr('fill', "white")
-        .attr('fill-opacity', '1')
-        .attr('stroke', "orange")
-        .attr('stroke-width', 1 / proj.scale)
-        .append("title")
-        .text(function(d){return d.properties.name.toUpperCase()+": "+d.properties.other_tags});
-
-    upd.enter()
-        .append('path')
-        .filter(function(d){return d.properties.phase_1!='yes'})
-        .attr("id", function (d) {return d.properties.name})
-        .attr('d', proj.pathFromGeojson)   
-        .attr('fill', "black")
-        .attr("fill-opacity","0.1")
-        .attr('stroke-width', 1 / proj.scale)
-        .append("title")
-        .text(function(d){return d.properties.name});
-});
 
 
-var baseMaps = {"Satelite":tiles_satellite, "Symbolic": tiles_dark};
-var overlayMaps = {"Buildings": buildingsOverlay};
-L.control.layers(baseMaps, overlayMaps).addTo(map);
-L.control.scale().addTo(map);
-map.addControl(new L.Control.Fullscreen());
-var options = {
-	lengthUnit:{
-		factor: 1000,
-		decimal: 2,
-		display:'meters',
-		label:'Distance'
-	}
-}
-L.control.ruler(options).addTo(map);
-// adding rotation control
-L.easyButton('<img src="images/rotation.png">', function(btn, map){
-    bearing = bearing-1.5;
+d3.select(".close").on("click", function(){d3.select("#info-panel").style("display","none")});
+
+
+function setBearing() {
+	bearing = bearing-1.5;
     map.setBearing(bearing);
-}).addTo( map );
+}
 
-
-// adding additional info panel 
-L.easyButton('<img src="images/weather.png">', function(btn,map){
+function toggleWeather() {
 	d3.select("#info-panel").style("display","block");//generating weather charts
 		
 		//generate the chart if it doesn't exist, otherwise just hide it
@@ -223,22 +237,23 @@ L.easyButton('<img src="images/weather.png">', function(btn,map){
 
 		}
 
-		
-}).addTo(map);
+	
+}
 
-d3.select(".close").on("click", function(){d3.select("#info-panel").style("display","none")});
+// adding rotation control
+L.easyButton('<img src="images/rotation.png">', setBearing).addTo(map);
 
+// adding additional info panel 
+L.easyButton('<img src="images/weather.png">', toggleWeather).addTo(map);
 
 // testing collaborative js
-L.easyButton('<img src="images/collaborative.png">', function(btn,map){
-TogetherJS(this); 
-}).addTo(map);
+L.easyButton('<img src="images/collaborative.png">', () => TogetherJS(this)).addTo(map);
 
 
-d3.json("features-edit.geojson", function(data) { 
-  buildings= data.features; 
-  //console.log(buildings);
-  buildingsOverlay.addTo(map) 
+d3.json("./features-edit.geojson", function(data) { 
+  	buildings = data.features; 
+  	//console.log(buildings);
+	buildingsOverlay.addTo(map);
 });
 
 var width = document.getElementById('map-canvas').offsetWidth;
@@ -259,111 +274,72 @@ slider.append("g").attr("class", "x axis").call(d3.svg.axis().scale(x).orient("b
       .attr("class", "halo");
 var handle = slider.append("circle").attr("class", "handle").attr("r", 10);
 
-d3.csv("./data/consump_all_monthlydailysum.csv", function(data){
 
-	 building_no = [1,2,3,4,5,50,6,61,67,68,7,73,84,87,88,89,90,9,92,62];
-            buildings_max = {}
-            buildings_min = {}
-            buildings_mean= {}
-            for (i=0; i<building_no.length;i++){
-               building_data = data.map(function(d){return parseFloat(d["Building_"+building_no[i]])});
-	           max_value = d3.max(building_data);
-	           min_value = d3.min(building_data);  
-	           mean_value = d3.mean(building_data);
-	           buildings_max["Building_"+building_no[i]] = max_value;
-	           buildings_min["Building_"+building_no[i]] = min_value;
-	           buildings_mean["Building_"+building_no[i]] = mean_value;
-	          
-               }
-              global_max = d3.max(Object.values(buildings_max));
-              global_min = d3.min(Object.values(buildings_min));
-              global_mean = d3.mean(Object.values(buildings_mean));
-              console.log(buildings_mean);
-              console.log(global_max);
-              console.log(global_mean);
+
+
+d3.csv("./data/consump_all_monthlydailysum.csv", (data) => {
+
+	const buildings_max = [];
+    const buildings_min = [];
+    const buildings_mean = [];
+
+    building_no.forEach((num) => {
+        const key = "Building_" + num;
+        const building_data = data.map((d) => parseFloat(d[key]));
+        buildings_max.push(d3.max(building_data));
+        buildings_min.push(d3.min(building_data));
+        buildings_mean.push(d3.mean(building_data));
+    });
+
+    global_max = d3.max(buildings_max);
+    global_min = d3.min(buildings_min);
+    global_mean = d3.mean(buildings_mean);
+
     brush.on("brush", function(){
-            var value = brush.extent()[0];
+        let value = brush.extent()[0];
 
-            if (d3.event.sourceEvent) { // not a programmatic event
-              value = x.invert(d3.mouse(this)[0]);
-              brush.extent([value, value]);
-              }
+        if (d3.event.sourceEvent) { // not a programmatic event
+            value = x.invert(d3.mouse(this)[0]);
+            brush.extent([value, value]);
+        }
 
-            handle.attr("cx", x(value));
-            var month = Math.round(value);
+        handle.attr("cx", x(value));
+        const month = Math.round(value);
+        for (i=0; i<building_no.length;i++){
+            consump = data[month-6]["Building_"+building_no[i]];
 
-          
-           
-
-             for (i=0; i<building_no.length;i++){
-               consump = data[month-6]["Building_"+building_no[i]];
-
-               d3.selectAll("#building_"+building_no[i]).attr("fill", colorcode(consump, 0, global_max, global_mean));
-                
-
-               }
-            
-                 
-                 
-              
-             });
+            d3.selectAll("#building_" + building_no[i]).attr("fill", colorcode(consump, 0, global_max, global_mean));
+        }
+    });
  
-  slider.call(brush);
+    slider.call(brush);
 });
 
 //slider animation introduction
 slider.call(brush.event).transition().delay(20).duration(10000).call(brush.extent([17, 17])).call(brush.event);
 
-function colorcode(Consumption, min, max, mean){
-   //console.log(Consumption);
-  if(typeof Consumption === 'undefined'){
-  	return "rgb(250,250,250)";
-  }
-  if (Consumption== 0){
-  	
-  	return "rgb(100,100,100)";
-  }
 
- if(Consumption>global_mean){ 
-  	  
-      var hue = (1-Math.log(Consumption)/Math.log(global_max))*0.5;
-	  rgb_color = HSVtoRGB(hue,1,1);
-	  //console.log(Consumption);
-	  return "rgb("+rgb_color.r+","+rgb_color.g+","+rgb_color.b+")";
-	 
-  }
 
-  if(Consumption!=0 && typeof Consumption != 'undefined'&& Consumption<=1.5*global_mean){ 
-  	  
-      //var hue = (1-(Consumption-min)/(max-min))*0.5;
-      var hue = (1-Math.log(Consumption)/Math.log(1.5*global_mean))*0.5;
-	  rgb_color = HSVtoRGB(hue,1,1);
-	  //console.log(Consumption);
-	  return "rgb("+rgb_color.r+","+rgb_color.g+","+rgb_color.b+")";
-	 
-  }
-}
-function HSVtoRGB(h, s, v) {
-    var r, g, b, i, f, p, q, t;
-    if (arguments.length === 1) {
-        s = h.s, v = h.v, h = h.h;
+function colorcode(consumption, min, max, mean){
+    //console.log(Consumption);
+    if(typeof consumption === 'undefined'){
+        return "white";
     }
-    i = Math.floor(h * 6);
-    f = h * 6 - i;
-    p = v * (1 - s);
-    q = v * (1 - f * s);
-    t = v * (1 - (1 - f) * s);
-    switch (i % 6) {
-        case 0: r = v, g = t, b = p; break;
-        case 1: r = q, g = v, b = p; break;
-        case 2: r = p, g = v, b = t; break;
-        case 3: r = p, g = q, b = v; break;
-        case 4: r = t, g = p, b = v; break;
-        case 5: r = v, g = p, b = q; break;
+    if (consumption === 0){
+        return "lightgray";
     }
-    return {
-        r: Math.round(r * 255),
-        g: Math.round(g * 255),
-        b: Math.round(b * 255)
-    };
+
+    if(consumption > mean){   	  
+        var hue = (1 - Math.log(consumption) / Math.log(max)) * 0.5;
+        return d3.hsv(hue,1,1).toString();
+    }
+
+    if(consumption <= 1.5 * mean){ 
+        //var hue = (1-(Consumption-min)/(max-min))*0.5;
+        var hue = (1-Math.log(consumption)/Math.log(1.5*mean))*0.5;
+        return d3.hsv(hue,1,1).toString();
+        //console.log(Consumption);	 
+    }
+
+    // TODO what color should be used instead?
 }
