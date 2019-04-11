@@ -92,14 +92,14 @@ var options = {
 }
 L.control.ruler(options).addTo(map);
 // adding rotation control
-L.easyButton('<img src="images//rotation.png">', function(btn, map){
+L.easyButton('<img src="images/rotation.png">', function(btn, map){
     bearing = bearing-1.5;
     map.setBearing(bearing);
 }).addTo( map );
 
 
 // adding additional info panel 
-L.easyButton('<img src="images//weather.png">', function(btn,map){
+L.easyButton('<img src="images/weather.png">', function(btn,map){
 	d3.select("#info-panel").style("display","block");//generating weather charts
 		
 		//generate the chart if it doesn't exist, otherwise just hide it
@@ -145,7 +145,7 @@ L.easyButton('<img src="images//weather.png">', function(btn,map){
 		    .x(function(d) { return x(d.date); })
 		    .y(function(d) { return y(d.para_value); });
 
-		d3.csv("meanMonthlyTemp.csv", function(error, data) {
+		d3.csv("./data/meanMonthlyTemp.csv", function(error, data) {
 
 				  if (error) throw error;
 				
@@ -230,7 +230,7 @@ d3.select(".close").on("click", function(){d3.select("#info-panel").style("displ
 
 
 // testing collaborative js
-L.easyButton('<img src="images//collaborative.png">', function(btn,map){
+L.easyButton('<img src="images/collaborative.png">', function(btn,map){
 TogetherJS(this); 
 }).addTo(map);
 
@@ -259,7 +259,7 @@ slider.append("g").attr("class", "x axis").call(d3.svg.axis().scale(x).orient("b
       .attr("class", "halo");
 var handle = slider.append("circle").attr("class", "handle").attr("r", 10);
 
-d3.csv("consump_all_monthlydailysum.csv", function(data){
+d3.csv("./data/consump_all_monthlydailysum.csv", function(data){
 
 	 building_no = [1,2,3,4,5,50,6,61,67,68,7,73,84,87,88,89,90,9,92,62];
             buildings_max = {}
