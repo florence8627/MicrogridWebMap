@@ -1,0 +1,135 @@
+body{
+background-color:lightgray;
+}
+
+
+#page{
+width: 100%;
+text-align:center;
+display:block;
+float:left;
+margin-top: 30px;
+}
+
+.pagetitle{
+  font-family: sans-serif;
+  font-size: 17px;
+  font-weight:bold;
+  color:white;  
+  width:1000px;
+  height: 30px;
+  background-color: gray;
+  margin:auto;
+ 
+}
+.subtitle{
+  font-family: sans-serif;
+  font-size: 16px;
+  font-weight:bold;
+  color:#484848;
+ 
+  display:block;
+  margin-left:10px;
+  margin-top:5px;
+  text-align:left;
+}
+.para{
+	font-family: sans-serif;
+	font-size: 13px;
+	display:block;
+	text-align:left;
+	margin-left:15px;
+    margin-top:5px;
+	margin-right:15px;
+}
+#content{
+width: 1000px;
+margin:auto;
+background-color:#E0E0E0;
+margin-top: 5px;
+}
+#dotmapsvg{
+background-color:#FFFFFF;
+border: solid 5px;
+border-color:#707070;
+}
+#mapsvg{
+border: solid 5px;
+border-color:#707070;
+background-color:#EEFFFF;
+margin-top:60px;
+}
+.voronoipoly{
+  fill-opacity: 1;
+  
+  stroke-opacity:0.2;
+ 
+}
+.subunit{
+	stroke: white;
+	stroke-width: 0.6px;
+	stroke-opacity:0.5;
+	/* stroke-dasharray: 2,4; */
+    stroke-linejoin: round;
+	fill: black;
+	opacity:0.65;
+  } 
+
+.place,
+.place-label {
+  fill: #444;
+}
+.caption{
+	font-family: sans-serif;
+    font-size: 11px;
+	color:steelblue;
+}
+.text {
+  font-family: sans-serif;
+  font-size: 15px;
+  pointer-events: none;
+  font-weight:bold;
+  color: #484848;
+}
+
+.axis {
+  font: 10px sans-serif;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.axis .domain {
+  fill: darkgray;
+  stroke: black;
+  stroke-opacity: .7;
+  stroke-width: 10px;
+  stroke-linecap: round;
+}
+
+.axis .halo {
+  fill: none;
+  stroke: darkgray;
+  stroke-width: 8px;
+  stroke-linecap: round;
+  
+}
+
+.slider .handle {
+  fill: #fff;
+  stroke: #000;
+  stroke-opacity: .5;
+  stroke-width: 1.25px;
+  cursor: pointer;
+}
+
+.legendrect{
+opacity:0.7;
+cursor:pointer;
+}
+.legendtext{
+font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size:9px;
+fill:black;
+opacity:1;
+}
