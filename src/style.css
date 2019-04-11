@@ -1,3 +1,76 @@
+html { height: 100%; overflow:hidden;}
+body { height: 100%; 
+     margin: 0; 
+     padding: 0 ;
+    }
+#map-canvas { height: 95% }
+.panel{
+  position:absolute;
+  z-index:1000;
+  left: 5%;
+  top: 1%;
+  width:40%;
+  height:30%;
+  display:none;
+    align-content: left;
+
+}
+
+.panel-content {
+background-color: #000000;
+opacity:0.65;
+
+padding: 5px;
+/*border: 1px solid #888;*/
+/*  width : 65%;  Could be more or less, depending on screen size 
+height: 60%;*/
+border: 2px solid gray;
+  border-radius: 25px;
+
+
+}
+
+/* The Close Button */
+.close {
+color: #aaa;
+float: right;
+font-weight: bold;
+font-size:20px;
+}
+
+.close:hover,
+.close:focus {
+color: white;
+text-decoration: none;
+cursor: pointer;
+}
+#weather-chart text{
+   stroke:white;
+   stroke-width:0.5px;
+   fill:white;
+   font: 11px sans-serif;
+}
+.x_axis path,
+.y_axis path,
+.x_axis line,
+.y_axis line{
+fill: none;
+stroke: #fff;
+shape-rendering: crispEdges;
+opacity:1;
+width:0.5;
+stroke-width:1px;
+
+}
+
+
+
+.line {
+fill: none;
+stroke: steelblue;
+stroke-width: 2px;
+}
+
 body{
 background-color:lightgray;
 }
