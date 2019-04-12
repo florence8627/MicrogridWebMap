@@ -258,7 +258,9 @@ function initSlider() {
 	const width = document.getElementById('map-canvas').offsetWidth;
 	//console.log(width);
 	
-	const x = d3.time.scale().domain([dates[0], dates[dates.length - 1]]).range([0, width - 50]).clamp(true);
+	const firstDate = dates[0];
+	const lastDate = dates[dates.length - 1];
+	const x = d3.time.scale().domain([firstDate, lastDate]).range([0, width - 50]).clamp(true);
 	
 	const slider = d3.select("#slidersvg").attr("width", width).attr("height", 40).append("g").attr("class", "slider").attr("transform","translate(20,10)");
 	slider.append("g").attr("class", "classflow");
@@ -275,15 +277,22 @@ function initSlider() {
 		.attr("class", "halo");
 
 	const handle = slider.append("circle").attr("class", "handle").attr("r", 10);
-	handle.call(d3.behavior.drag().on('drag', () => {
-		const px = d3.event.x;
-		const value = d3.time.month.round(x.invert(px));
-		handle.attr('cx', x(value));
-		console.log(px, value);
+
+	const brush = d3.svg.brush().x(x).extent([firstDate, firstDate]);
+
+	brush.on("brush", function () {
+		let value = brush.extent()[0];
+		if (d3.event.sourceEvent) { // not a programmatic event
+			value = x.invert(d3.mouse(this)[0]);
+			brush.extent([value, value]);
+		}
+		handle.attr("cx", x(value));
+
+		const date = d3.time.month.round(value);
 
 		// update the buildings
 		d3.select('.buildings').selectAll('.building:not(.phaseN)').style('fill', (d) => {
-			const consumption = d.data.find((d) => d.date.getTime() == value.getTime());
+			const consumption = d.data.find((d) => d.date.getTime() == date.getTime());
 			if (consumption == null || isNaN(consumption.value)) {
 				return 'white';
 			}
@@ -292,10 +301,13 @@ function initSlider() {
 			}
 			return colorcode(consumption.value, 0, global_max, global_mean);
 		});
-	}));
+	});
+	slider.call(brush);
 
+	
 	//slider animation introduction
-	// slider.call(brush.event).transition().delay(20).duration(10000).call(brush.extent([17, 17])).call(brush.event);
+	slider.call(brush.event).transition().delay(20).duration(10000).call(brush.extent([lastDate, lastDate])).call(brush.event);
+
 }
 
 function colorcode(consumption, min, max, mean){
