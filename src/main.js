@@ -1,8 +1,11 @@
 //togetherjs config //
-TogetherJSConfig_cloneClicks = "#info-panel";
-TogetherJSConfig_suppressJoinConfirmation = true;
+window.TogetherJSConfig = {
+	cloneClicks: "#info-panel",
+	suppressJoinConfirmation: true
+};
 
 
+let sendByTogetherJSPeer = false;
 let bearing = 0;
 let dates = [];
 let global_max = 0;
@@ -10,13 +13,12 @@ let global_mean = 0;
 let selectedDate = null;
 let buildings = [];
 
+const events = d3.dispatch('select', 'animate');
+
 const parseDate = d3.time.format("%Y%m%d").parse;
 
-// update function to call when the buildings should be rendered
-let updateBuildings = () => undefined; // dummy
-
 const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
-	updateBuildings = () => {
+	updateBuildings = (selectedDate) => {
 		const upd = selection.classed('buildings', true).selectAll('path.building').data(buildings);
 		const updEnter = upd.enter()
 			.append('path')
@@ -35,6 +37,8 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 
 		upd.exit().remove();
 	};
+	
+	events.on('select.buildings', updateBuildings);
 	updateBuildings();
 });
 
@@ -226,6 +230,8 @@ L.easyButton('<img src="images/weather.png">', toggleWeather).addTo(map);
 
 // testing collaborative js
 L.easyButton('<img src="images/collaborative.png">', () => TogetherJS(this)).addTo(map);
+// animation
+L.easyButton('<img src="images/rotation.png">', () => events.animate()).addTo(map);
 
 
 d3.json("./features-edit.geojson", function (data) { 	
@@ -253,21 +259,13 @@ d3.json("./features-edit.geojson", function (data) {
 });
 
 
-TogetherJS_hub_on = {
-	selectDate: (msg) => {
-		selectedDate = new Date(msg.date);
-		updateBuildings();
-	}
-};
-
-function setSelectedDate(newDate) {
+function setSelectedDate(newDate, byOther) {
 	if (selectedDate && newDate.getTime() === selectedDate.getTime()) {
 		return;
 	}
 
 	selectedDate = newDate;
-	updateBuildings();
-	TogetherJS.send({type: 'selectDate', date: selectedDate.toString()});
+	events.select(newDate, byOther);
 } 
 
 function initSlider() {
@@ -296,6 +294,7 @@ function initSlider() {
 	const handle = slider.append("circle").attr("class", "handle").attr("r", 10);
 
 	const brush = d3.svg.brush().x(x).extent([firstDate, firstDate]);
+	setSelectedDate(firstDate);
 
 	brush.on("brush", function () {
 		let value = brush.extent()[0];
@@ -309,10 +308,34 @@ function initSlider() {
 	});
 	slider.call(brush);
 
+	events.on('select.slider', (date) => {
+		if (!sendByTogetherJSPeer) {
+			return;
+		}
+		handle.attr("cx", x(date));
+		brush.extent([date, date]);
+	});
+
 	
-	//slider animation introduction
-	slider.call(brush.event).transition().delay(20).duration(10000).call(brush.extent([lastDate, lastDate])).call(brush.event);
+	events.on('animate.slider', () => {
+		//slider animation introduction
+		slider.call(brush.extent([firstDate, firstDate])).call(brush.event).transition().ease('linear').duration(10000).call(brush.extent([lastDate, lastDate])).call(brush.event);
+	});
 }
+
+// sync selection event
+TogetherJSConfig.hub_on = {
+	select: (msg) => {
+		sendByTogetherJSPeer = true;
+		setSelectedDate(new Date(msg.date));
+		sendByTogetherJSPeer = false;
+	}
+};
+events.on('select.together', (date) => {
+	if (TogetherJS.running && !sendByTogetherJSPeer) {
+		TogetherJS.send({type: 'select', date: date.toString()});
+	}
+});
 
 
 function computeConsumptionColor(d) {
