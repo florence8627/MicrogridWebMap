@@ -3,6 +3,9 @@ TogetherJSConfig_cloneClicks = "#info-panel";
 
 let bearing = 0;
 let dates = [];
+let global_max = 0;
+let global_mean = 0;
+let selectedDate = null;
 let buildings = [];
 
 const parseDate = d3.time.format("%Y%m%d").parse;
@@ -20,7 +23,8 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 		.classed('phaseN', (d) => d.properties.phase_1 !== 'yes')
 		.attr('id', (d) => d.properties.name)
 		.attr('d', proj.pathFromGeojson)
-		.attr('stroke-width', 1 / proj.scale);
+		.style('fill', (d) => selectedDate == null || d.properties.phase_1 !== 'yes' ? null : computeConsumptionColor(d))
+		.style('stroke-width', 1 / proj.scale);
 	upd
 		.select('title')
 		.text((d) => `${d.properties.name ? d.properties.name.toUpperCase() : '???'}: ${d.properties.other_tags}`);
@@ -244,6 +248,9 @@ d3.json("./features-edit.geojson", function (data) {
 			const name = (building.properties.name || '').toLowerCase();
 			building.data = dates.map((date, i) => ({date: date, value: parseFloat(csv[i][name])}))
 		});
+		
+		global_mean = d3.mean(buildings, (d) => d3.mean(d.data, (d) => d.value));
+		global_max = d3.max(buildings, (d) => d3.max(d.data, (d) => d.value));
 
 		//console.log(buildings);
 		buildingsOverlay.addTo(map);
@@ -252,8 +259,6 @@ d3.json("./features-edit.geojson", function (data) {
 });
 
 function initSlider() {
-	const global_mean = d3.mean(buildings, (d) => d3.mean(d.data, (d) => d.value));
-	const global_max = d3.max(buildings, (d) => d3.max(d.data, (d) => d.value));
 	
 	const width = document.getElementById('map-canvas').offsetWidth;
 	//console.log(width);
@@ -288,19 +293,10 @@ function initSlider() {
 		}
 		handle.attr("cx", x(value));
 
-		const date = d3.time.month.round(value);
+		selectedDate = d3.time.month.round(value);
 
 		// update the buildings
-		d3.select('.buildings').selectAll('.building:not(.phaseN)').style('fill', (d) => {
-			const consumption = d.data.find((d) => d.date.getTime() == date.getTime());
-			if (consumption == null || isNaN(consumption.value)) {
-				return 'white';
-			}
-			if (consumption.value === 0) {
-				return 'ligtgray';
-			}
-			return colorcode(consumption.value, 0, global_max, global_mean);
-		});
+		d3.select('.buildings').selectAll('.building:not(.phaseN)').style('fill', computeConsumptionColor);
 	});
 	slider.call(brush);
 
@@ -308,6 +304,20 @@ function initSlider() {
 	//slider animation introduction
 	slider.call(brush.event).transition().delay(20).duration(10000).call(brush.extent([lastDate, lastDate])).call(brush.event);
 
+}
+
+function computeConsumptionColor(d) {
+	if (!selectedDate) {
+		return 'white';
+	}
+	const consumption = d.data.find((d) => d.date.getTime() == selectedDate.getTime());
+	if (consumption == null || isNaN(consumption.value)) {
+		return 'white';
+	}
+	if (consumption.value === 0) {
+		return 'lightgray';
+	}
+	return colorcode(consumption.value, 0, global_max, global_mean);
 }
 
 function colorcode(consumption, min, max, mean){
