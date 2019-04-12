@@ -1,5 +1,7 @@
 //togetherjs config //
 TogetherJSConfig_cloneClicks = "#info-panel";
+TogetherJSConfig_suppressJoinConfirmation = true;
+
 
 let bearing = 0;
 let dates = [];
@@ -10,26 +12,30 @@ let buildings = [];
 
 const parseDate = d3.time.format("%Y%m%d").parse;
 
+// update function to call when the buildings should be rendered
+let updateBuildings = () => undefined; // dummy
+
 const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
-	const upd = selection.classed('buildings', true).selectAll('path.building').data(buildings);
-	
-	const updEnter = upd.enter()
-		.append('path')
-		.classed('building', true)
+	updateBuildings = () => {
+		const upd = selection.classed('buildings', true).selectAll('path.building').data(buildings);
+		const updEnter = upd.enter()
+			.append('path')
+			.classed('building', true)
 
-	updEnter.append('title');
+		updEnter.append('title');
+		upd
+			.classed('phaseN', (d) => d.properties.phase_1 !== 'yes')
+			.attr('id', (d) => d.properties.name)
+			.attr('d', proj.pathFromGeojson)
+			.style('fill', (d) => selectedDate == null || d.properties.phase_1 !== 'yes' ? null : computeConsumptionColor(d))
+			.style('stroke-width', 1 / proj.scale);
+		upd
+			.select('title')
+			.text((d) => `${d.properties.name ? d.properties.name.toUpperCase() : '???'}: ${d.properties.other_tags}`);
 
-	upd
-		.classed('phaseN', (d) => d.properties.phase_1 !== 'yes')
-		.attr('id', (d) => d.properties.name)
-		.attr('d', proj.pathFromGeojson)
-		.style('fill', (d) => selectedDate == null || d.properties.phase_1 !== 'yes' ? null : computeConsumptionColor(d))
-		.style('stroke-width', 1 / proj.scale);
-	upd
-		.select('title')
-		.text((d) => `${d.properties.name ? d.properties.name.toUpperCase() : '???'}: ${d.properties.other_tags}`);
-
-	upd.exit().remove();
+		upd.exit().remove();
+	};
+	updateBuildings();
 });
 
 const map = createMap();
@@ -93,21 +99,7 @@ function createMap() {
 	return map;
 }
 
-
-
-//adding pattern definition
-d3.select("svg").append('defs').append("pattern")
-                               .attr({id:"diagonal-stripe-3",patternUnits:"userSpaceOnUse",width:"5",height:"5"})
-                               .append('path')
-							    .attr('d', 'M-1,1 l2,-2 M0,4 l4,-4 M3,5 l2,-2')
-							    .attr('stroke', '#000000')
-							    .attr('stroke-width', 0.2)
-							    .attr('fill','none');
-
-
-
-
-d3.select(".close").on("click", function(){d3.select("#info-panel").style("display","none")});
+d3.select(".close").on("click", () => d3.select("#info-panel").style("display","none"));
 
 
 function setBearing() {
@@ -119,6 +111,7 @@ function generateWeatherChart() {
 	const margin = {top: 5, right: 90, bottom: 30, left: 20};
 	const width = document.getElementById("info-panel").clientWidth - margin.left - margin.right;
 	const height = document.getElementById("info-panel").clientHeight - margin.top - margin.bottom;
+
 	const svg = d3.select("#weather-chart")
 					 .attr("width", width + margin.left + margin.right)
 					 .attr("height", height + margin.top + margin.bottom)
@@ -253,10 +246,29 @@ d3.json("./features-edit.geojson", function (data) {
 		global_max = d3.max(buildings, (d) => d3.max(d.data, (d) => d.value));
 
 		//console.log(buildings);
+		// build buildings layer
 		buildingsOverlay.addTo(map);
 		initSlider();
 	})
 });
+
+
+TogetherJS_hub_on = {
+	selectDate: (msg) => {
+		selectedDate = new Date(msg.date);
+		updateBuildings();
+	}
+};
+
+function setSelectedDate(newDate) {
+	if (selectedDate && newDate.getTime() === selectedDate.getTime()) {
+		return;
+	}
+
+	selectedDate = newDate;
+	updateBuildings();
+	TogetherJS.send({type: 'selectDate', date: selectedDate.toString()});
+} 
 
 function initSlider() {
 	
@@ -292,19 +304,16 @@ function initSlider() {
 			brush.extent([value, value]);
 		}
 		handle.attr("cx", x(value));
-
-		selectedDate = d3.time.month.round(value);
-
-		// update the buildings
-		d3.select('.buildings').selectAll('.building:not(.phaseN)').style('fill', computeConsumptionColor);
+		const newDate = d3.time.month.round(value);
+		setSelectedDate(newDate);
 	});
 	slider.call(brush);
 
 	
 	//slider animation introduction
 	slider.call(brush.event).transition().delay(20).duration(10000).call(brush.extent([lastDate, lastDate])).call(brush.event);
-
 }
+
 
 function computeConsumptionColor(d) {
 	if (!selectedDate) {
