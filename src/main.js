@@ -237,8 +237,11 @@ d3.json("./features-edit.geojson", function (data) {
 
 		// integrate building data
 		dates = csv.map((d) => parseDate(d.date));
+		csv.forEach((row) => {
+			Object.keys(row).forEach((key) => row[key.toLowerCase()] = row[key]);
+		})
 		buildings.forEach((building) => {
-			const name = building.properties.name;
+			const name = (building.properties.name || '').toLowerCase();
 			building.data = dates.map((date, i) => ({date: date, value: parseFloat(csv[i][name])}))
 		});
 
@@ -255,7 +258,7 @@ function initSlider() {
 	const width = document.getElementById('map-canvas').offsetWidth;
 	//console.log(width);
 	
-	const x = d3.time.scale().domain([dates[0], dates[1]]).range([0, width - 50]).clamp(true);
+	const x = d3.time.scale().domain([dates[0], dates[dates.length - 1]]).range([0, width - 50]).clamp(true);
 	
 	const slider = d3.select("#slidersvg").attr("width", width).attr("height", 40).append("g").attr("class", "slider").attr("transform","translate(20,10)");
 	slider.append("g").attr("class", "classflow");
@@ -272,22 +275,22 @@ function initSlider() {
 		.attr("class", "halo");
 
 	const handle = slider.append("circle").attr("class", "handle").attr("r", 10);
-	handle.call(d3.drag().on('drag', () => {
+	handle.call(d3.behavior.drag().on('drag', () => {
 		const px = d3.event.x;
-		const value = d3.timeMonth.round(x.invert(px));
+		const value = d3.time.month.round(x.invert(px));
 		handle.attr('cx', x(value));
 		console.log(px, value);
 
 		// update the buildings
 		d3.select('.buildings').selectAll('.building:not(.phaseN)').style('fill', (d) => {
-			const consumption = d.data.find((d) => d.date == value);
-			if (consumption == null) {
+			const consumption = d.data.find((d) => d.date.getTime() == value.getTime());
+			if (consumption == null || isNaN(consumption.value)) {
 				return 'white';
 			}
 			if (consumption.value === 0) {
 				return 'ligtgray';
 			}
-			return colorcode(consumption.vlaue, 0, global_max, global_mean);
+			return colorcode(consumption.value, 0, global_max, global_mean);
 		});
 	}));
 
@@ -306,13 +309,13 @@ function colorcode(consumption, min, max, mean){
 
     if(consumption > mean){   	  
         var hue = (1 - Math.log(consumption) / Math.log(max)) * 0.5;
-        return d3.hsv(hue,1,1).toString();
+        return d3.hsl(hue * 360,1, 0.5).toString();
     }
 
     if(consumption <= 1.5 * mean){ 
         //var hue = (1-(Consumption-min)/(max-min))*0.5;
         var hue = (1-Math.log(consumption)/Math.log(1.5*mean))*0.5;
-        return d3.hsv(hue,1,1).toString();
+        return d3.hsl(hue * 360,1, 0.5).toString();
         //console.log(Consumption);	 
     }
 
