@@ -1,15 +1,14 @@
 //togetherjs config //
 TogetherJSConfig_cloneClicks = "#info-panel";
 
-let global_max;
-let global_min;
-let global_mean;
 let bearing = 0;
-const building_no = [1,2,3,4,5,50,6,61,67,68,7,73,84,87,88,89,90,9,92,62];
+let dates = [];
 let buildings = [];
 
+const parseDate = d3.time.format("%Y%m%d").parse;
+
 const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
-	const upd = selection.selectAll('path.building').data(buildings);
+	const upd = selection.classed('buildings', true).selectAll('path.building').data(buildings);
 	
 	const updEnter = upd.enter()
 		.append('path')
@@ -24,7 +23,7 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 		.attr('stroke-width', 1 / proj.scale);
 	upd
 		.select('title')
-		.text((d) => `${d.properties.name.toUpperCase()}: ${d.properties.other_tags}`);
+		.text((d) => `${d.properties.name ? d.properties.name.toUpperCase() : '???'}: ${d.properties.other_tags}`);
 
 	upd.exit().remove();
 });
@@ -92,7 +91,6 @@ function createMap() {
 
 
 
-
 //adding pattern definition
 d3.select("svg").append('defs').append("pattern")
                                .attr({id:"diagonal-stripe-3",patternUnits:"userSpaceOnUse",width:"5",height:"5"})
@@ -113,135 +111,118 @@ function setBearing() {
     map.setBearing(bearing);
 }
 
-function toggleWeather() {
-	d3.select("#info-panel").style("display","block");//generating weather charts
+function generateWeatherChart() {
+	const margin = {top: 5, right: 90, bottom: 30, left: 20};
+	const width = document.getElementById("info-panel").clientWidth - margin.left - margin.right;
+	const height = document.getElementById("info-panel").clientHeight - margin.top - margin.bottom;
+	const svg = d3.select("#weather-chart")
+					 .attr("width", width + margin.left + margin.right)
+					 .attr("height", height + margin.top + margin.bottom)
+					 .append("g")
+					 .attr("id","weather-chart-group")
+					 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	const formatMonth = d3.time.format('%b');
+	const formatYear = d3.time.format('%Y');
+
+	const x = d3.time.scale().range([0, width]);
+	const y = d3.scale.linear().range([height, 0]);
+	const color = d3.scale.category10();
+
+	const xAxis = d3.svg.axis()
+		.scale(x)
+		.orient("bottom")
+		.tickFormat((date) => d3.time.year(date) < date ? formatMonth(date) : formatYear(date));
+
+	const yAxis = d3.svg.axis()
+		.scale(y)
+		.orient("left")
+		.ticks(6);
+
+	const line = d3.svg.line()
+		.x((d) => x(d.date))
+		.y((d) => y(d.para_value));
+	
+	function renderChart(weather_parameters) {	  
+		svg.append("g")
+			.attr("class", "x_axis")
+			.attr("transform", "translate(0," + height + ")")
+			.call(xAxis);
+
+		svg.append("g")
+			.attr("class", "y_axis")
+			.call(yAxis)
+			.append("text")
+			.attr("transform", "rotate(-90)")
+			.attr("y", 10)
+			.attr("dy", ".71em")
+			.style("text-anchor", "end")
+			.text("Temperature");
+
+		const info = svg.selectAll(".weather_parameters")
+			.data(weather_parameters)
+			.enter().append("g")
+			.attr("class", "weather_parameters");
+
+		info.append("path")
+			.attr("class", "line")
+			.attr("d", (d)  => line(d.values))
+			.style("stroke", (d) => color(d.name));
+
+		info.append("text")
+			.datum((d) => ({name: d.name, value: d.values[d.values.length-1]}))
+			.attr("transform", (d) => `translate(${x(d.value.date)},${y(d.value.para_value)})`)
+			.attr("x", 3)
+			.attr("dy", ".35em")
+			.text((d)  => d.name);
+
+		info.selectAll("circle")
+			.data((d) => d.values)
+			.enter()
+			.append("circle")
+			.attr("r",4)
+			.attr("cx", (d) => x(d.date))
+			.attr("cy", (d) => y(d.para_value))
+			.style("fill", (d, i, j) => color(weather_parameters[j].name))
+			.append('title').text((d) => d.para_value);
+	}
+
+	d3.csv("./data/meanMonthlyTemp.csv", function(error, data) {
+		if (error) throw error;
+
+		data.forEach((d) => {
+			d.date = parseDate(d.date);
+		});
 		
-		//generate the chart if it doesn't exist, otherwise just hide it
-		if(d3.select("#weather-chart").attr("width")==null){
-			 // set the dimensions and margins of the graph
-		var margin = {top: 5, right: 90, bottom: 30, left: 20},
-		width = document.getElementById("info-panel").clientWidth - margin.left - margin.right,
-		height = document.getElementById("info-panel").clientHeight - margin.top - margin.bottom;
-		var svg = d3.select("#weather-chart")
-						 .attr("width", width + margin.left + margin.right)
-						 .attr("height", height + margin.top + margin.bottom)
-						 .append("g")
-						 .attr("id","weather-chart-group")
-						 .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-		var parseDate = d3.time.format("%Y%m%d").parse;
-
-		var x = d3.time.scale().range([0, width]);
-
-
-		var y = d3.scale.linear().range([height, 0]);
-
-		var color = d3.scale.category10();
-
-		var xAxis = d3.svg.axis()
-		    .scale(x)
-		    .orient("bottom")
-		    .tickFormat(function(date){
-				    if (d3.time.year(date) < date) {
-				      return d3.time.format('%b')(date);
-				    } else {
-				      return d3.time.format('%Y')(date);
-				    }
-		            });
-		   
-
-		var yAxis = d3.svg.axis()
-		    .scale(y)
-		    .orient("left")
-		    .ticks(6);
-
-		var line = d3.svg.line()
-		    .x(function(d) { return x(d.date); })
-		    .y(function(d) { return y(d.para_value); });
-
-		d3.csv("./data/meanMonthlyTemp.csv", function(error, data) {
-
-				  if (error) throw error;
-				
-				  color.domain(d3.keys(data[0]).filter(function(key) { return (key !== "date")&&(key !== "Month")&&(key !== "Year"); }));
-				 
-				  data.forEach(function(d) {
-				  
-				    d.date = parseDate(d.date);
-				  });
-
-				   
-
-				  var weather_parameters = color.domain().map(function(name) {
-				    return {
-				      name: name,
-				      values: data.map(function(d) {
-				        return {date: d.date, para_value: +d[name]};
-				      })
-				    };
-				  });
-		        
-		          //console.log(weather_parameters);
-
-				  x.domain(d3.extent(data, function(d) { return d.date; }));
-
-				  y.domain([
-				    4,
-				    d3.max(weather_parameters, function(c) { return d3.max(c.values, function(v) { return v.para_value; }); })
-				  ]);
-
-		       
-				  
-				  svg.append("g")
-				      .attr("class", "x_axis")
-				      .attr("transform", "translate(0," + height + ")")
-				      .call(xAxis);
-
-				  svg.append("g")
-				      .attr("class", "y_axis")
-				      .call(yAxis)
-				     .append("text")
-				      .attr("transform", "rotate(-90)")
-				      .attr("y", 10)
-				      .attr("dy", ".71em")
-				      .style("text-anchor", "end")
-				      .text("Temperature");
-
-				  var info = svg.selectAll(".weather_parameters")
-				      .data(weather_parameters)
-				      .enter().append("g")
-				      .attr("class", "weather_parameters");
-
-				  info.append("path")
-				      .attr("class", "line")
-				      .attr("d", function(d) { return line(d.values); })
-				      .style("stroke", function(d) { return color(d.name); });
-
-				  info.append("text")
-				      .datum(function(d) { return {name: d.name, value: d.values[d.values.length-1]}; })
-				      .attr("transform", function(d) { return "translate(" + x(d.value.date) + "," + y(d.value.para_value) + ")"; })
-				      .attr("x", 3)
-				      .attr("dy", ".35em")
-				      .text(function(d) { return d.name; });
-
-				  info.selectAll("circle")
-				      .data(function(d){return d.values})
-				      .enter()
-				      .append("circle")
-				      .attr("r",4)
-		              .attr("cx", function(d){return x(d.date);})
-		              .attr("cy", function(d){return y(d.para_value);})
-		              .style("fill", function(d,i,j){return color(weather_parameters[j].name);});
+		const weather_parameters = Object.keys(data[0]).filter((d) => d !== 'date').map((name) => {
+			return {
+				name: name,
+				values: data.map((d) => ({date: d.date, para_value: +d[name]}))
+			};
 		});
 
+		color.domain(weather_parameters.map((d) => d.name));
+		x.domain(d3.extent(data, (d) => d.date))
+		y.domain([
+			4,
+			d3.max(weather_parameters, (c) => d3.max(c.values, (v) => v.para_value))
+		]);
+			
+		renderChart(weather_parameters);
+	});
+}
 
-		}
 
-	
+function toggleWeather() {
+	d3.select("#info-panel").style("display", "block");//generating weather charts
+
+	if (d3.select("#weather-chart .weather_parameters").empty()) {	
+		generateWeatherChart();
+	}
 }
 
 // adding rotation control
-L.easyButton('<img src="images/rotation.png">', setBearing).addTo(map);
+// L.easyButton('<img src="images/rotation.png">', setBearing).addTo(map);
 
 // adding additional info panel 
 L.easyButton('<img src="images/weather.png">', toggleWeather).addTo(map);
@@ -250,75 +231,69 @@ L.easyButton('<img src="images/weather.png">', toggleWeather).addTo(map);
 L.easyButton('<img src="images/collaborative.png">', () => TogetherJS(this)).addTo(map);
 
 
-d3.json("./features-edit.geojson", function(data) { 
-  	buildings = data.features; 
-  	//console.log(buildings);
-	buildingsOverlay.addTo(map);
+d3.json("./features-edit.geojson", function (data) { 	
+	d3.csv("./data/consump_all_monthlydailysum.csv", (csv) => {
+		buildings = data.features;
+
+		// integrate building data
+		dates = csv.map((d) => parseDate(d.date));
+		buildings.forEach((building) => {
+			const name = building.properties.name;
+			building.data = dates.map((date, i) => ({date: date, value: parseFloat(csv[i][name])}))
+		});
+
+		//console.log(buildings);
+		buildingsOverlay.addTo(map);
+		initSlider();
+	})
 });
 
-var width = document.getElementById('map-canvas').offsetWidth;
-//console.log(width);
-var x = d3.scale.linear().domain([6,17]).range([0, width-50]).clamp(true);
-var brush = d3.svg.brush().x(x).extent([0, 0]);
- 
-var slider = d3.select("#slidersvg").attr("width", width).attr("height", 40).append("g").attr("class", "slider").attr("transform","translate(20,10)");
-var classflow = slider.append("g").attr("class","classflow");
-slider.append("g").attr("class", "x axis").call(d3.svg.axis().scale(x).orient("bottom")
-      .tickFormat(function(d) { if (d<=12){return "2016-"+d;}
-                                if (d> 12){return "2017-"+(d-12);} } )
-      .ticks(12)
-      .tickSize(0)
-      .tickPadding(12))
-      .select(".domain")
-      .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
-      .attr("class", "halo");
-var handle = slider.append("circle").attr("class", "handle").attr("r", 10);
+function initSlider() {
+	const global_mean = d3.mean(buildings, (d) => d3.mean(d.data, (d) => d.value));
+	const global_max = d3.max(buildings, (d) => d3.max(d.data, (d) => d.value));
+	
+	const width = document.getElementById('map-canvas').offsetWidth;
+	//console.log(width);
+	
+	const x = d3.time.scale().domain([dates[0], dates[1]]).range([0, width - 50]).clamp(true);
+	
+	const slider = d3.select("#slidersvg").attr("width", width).attr("height", 40).append("g").attr("class", "slider").attr("transform","translate(20,10)");
+	slider.append("g").attr("class", "classflow");
+	
+	const axis = d3.svg.axis().scale(x).orient("bottom")
+		.tickSize(0)
+		.tickFormat(d3.time.format('%b %Y'))
+		.tickPadding(12);
 
+	slider.append("g").attr("class", "x axis")
+		.call(axis)
+		.select(".domain")
+		.select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+		.attr("class", "halo");
 
+	const handle = slider.append("circle").attr("class", "handle").attr("r", 10);
+	handle.call(d3.drag().on('drag', () => {
+		const px = d3.event.x;
+		const value = d3.timeMonth.round(x.invert(px));
+		handle.attr('cx', x(value));
+		console.log(px, value);
 
+		// update the buildings
+		d3.select('.buildings').selectAll('.building:not(.phaseN)').style('fill', (d) => {
+			const consumption = d.data.find((d) => d.date == value);
+			if (consumption == null) {
+				return 'white';
+			}
+			if (consumption.value === 0) {
+				return 'ligtgray';
+			}
+			return colorcode(consumption.vlaue, 0, global_max, global_mean);
+		});
+	}));
 
-d3.csv("./data/consump_all_monthlydailysum.csv", (data) => {
-
-	const buildings_max = [];
-    const buildings_min = [];
-    const buildings_mean = [];
-
-    building_no.forEach((num) => {
-        const key = "Building_" + num;
-        const building_data = data.map((d) => parseFloat(d[key]));
-        buildings_max.push(d3.max(building_data));
-        buildings_min.push(d3.min(building_data));
-        buildings_mean.push(d3.mean(building_data));
-    });
-
-    global_max = d3.max(buildings_max);
-    global_min = d3.min(buildings_min);
-    global_mean = d3.mean(buildings_mean);
-
-    brush.on("brush", function(){
-        let value = brush.extent()[0];
-
-        if (d3.event.sourceEvent) { // not a programmatic event
-            value = x.invert(d3.mouse(this)[0]);
-            brush.extent([value, value]);
-        }
-
-        handle.attr("cx", x(value));
-        const month = Math.round(value);
-        for (i=0; i<building_no.length;i++){
-            consump = data[month-6]["Building_"+building_no[i]];
-
-            d3.selectAll("#building_" + building_no[i]).attr("fill", colorcode(consump, 0, global_max, global_mean));
-        }
-    });
- 
-    slider.call(brush);
-});
-
-//slider animation introduction
-slider.call(brush.event).transition().delay(20).duration(10000).call(brush.extent([17, 17])).call(brush.event);
-
-
+	//slider animation introduction
+	// slider.call(brush.event).transition().delay(20).duration(10000).call(brush.extent([17, 17])).call(brush.event);
+}
 
 function colorcode(consumption, min, max, mean){
     //console.log(Consumption);
