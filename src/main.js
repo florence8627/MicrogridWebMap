@@ -5,14 +5,20 @@ window.TogetherJSConfig = {
 };
 
 
+// indicator whether the event was triggerd by TogetherJS sync operation
 let sendByTogetherJSPeer = false;
+
 let bearing = 0;
+// dates that are available
 let dates = [];
 let global_max = 0;
 let global_mean = 0;
+// currently selected date
 let selectedDate = null;
+// list of buildings: { properties: { name: string}, data: {date: Date, value: number}[] }
 let buildings = [];
 
+// internal event handler
 const events = d3.dispatch('select', 'animate');
 
 const parseDate = d3.time.format("%Y%m%d").parse;
@@ -226,12 +232,12 @@ function toggleWeather() {
 // L.easyButton('<img src="images/rotation.png">', setBearing).addTo(map);
 
 // adding additional info panel 
-L.easyButton('<img src="images/weather.png">', toggleWeather).addTo(map);
+L.easyButton('<img src="images/weather.png" alt="Show Weather Plot">', toggleWeather).addTo(map);
 
 // testing collaborative js
-L.easyButton('<img src="images/collaborative.png">', () => TogetherJS(this)).addTo(map);
+L.easyButton('<img src="images/collaborative.png" alt="Start Collaboration">', () => TogetherJS(this)).addTo(map);
 // animation
-L.easyButton('<img src="images/rotation.png">', () => events.animate()).addTo(map);
+L.easyButton('<img src="images/rotation.png" alt="Start Animation">', () => events.animate()).addTo(map);
 
 
 d3.json("./features-edit.geojson", function (data) { 	
