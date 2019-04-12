@@ -329,6 +329,13 @@ TogetherJSConfig.hub_on = {
 		sendByTogetherJSPeer = true;
 		setSelectedDate(new Date(msg.date));
 		sendByTogetherJSPeer = false;
+	},
+	'togetherjs.hello': () => {
+		// added a new peer, sync the selectedDate
+		console.log('peer added');
+		if (selectedDate) {
+			TogetherJS.send({type: 'select', date: selectedDate.toString()});
+		}
 	}
 };
 events.on('select.together', (date) => {
