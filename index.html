@@ -153,6 +153,14 @@ var buildingsOverlay = L.d3SvgOverlay(function(sel, proj) {
 	
 var upd = sel.selectAll('path').data(buildings);
   
+    upd.enter()
+     .append('path')
+     .filter(function(d){return d.properties.id.includes("NetworkLine")})
+     .attr("id", function (d) {return d.properties.id})
+     .attr('d', proj.pathFromGeojson)  
+     .attr('fill', "blue")
+     .attr("fill-opacity","1")
+     .attr('stroke-width', "0")
 
   upd.enter()
     .append('path')
@@ -178,8 +186,8 @@ var upd = sel.selectAll('path').data(buildings);
      .append("title")
      .text(function(d){return d.properties.name});
 
-   
-    
+
+ 
 });
 
 
@@ -341,7 +349,7 @@ TogetherJS(this);
 }).addTo(map);
 
 
-d3.json("features-edit.geojson", function(data) { 
+d3.json("Feature-withnetwork.geojson", function(data) { 
   buildings= data.features; 
   //console.log(buildings);
   buildingsOverlay.addTo(map) 
