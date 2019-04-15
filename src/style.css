@@ -242,6 +242,12 @@ body {
   stroke: none;
 }
 
+/* NETWORKS */
+
+.network {
+  fill: blue;
+}
+
 #legend {
   position: absolute;
   right: 5px;

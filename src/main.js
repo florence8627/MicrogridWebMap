@@ -18,6 +18,7 @@ let global_mean = 0;
 let selectedDate = null;
 // list of buildings: { properties: { name: string}, data: {date: Date, value: number}[] }
 let buildings = [];
+let networkLines = [];
 
 // internal event handler
 const events = d3.dispatch('select', 'animate');
@@ -30,7 +31,7 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 		const upd = selection.classed('buildings', true).selectAll('path.building').data(buildings);
 		const updEnter = upd.enter()
 			.append('path')
-			.classed('building', true)
+			.classed('building', true);
 
 		updEnter.append('title');
 		upd
@@ -45,6 +46,17 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 		upd.exit().remove();
 	};
 	
+	const networks = selection.selectAll('path.network').data(networkLines);
+	const networksEnter = networks.enter()
+		.append('path')
+		.classed('network', true);
+
+	networks
+		.attr('id', (d) => d.properties.name)
+		.attr('d', proj.pathFromGeojson)
+		networks.exit().remove();
+	networks.exit().remove();
+
 	events.on('select.buildings', updateBuildings);
 	updateBuildings(selectedDate);
 });
@@ -241,9 +253,10 @@ L.easyButton('<img src="images/collaborative.png" alt="Start Collaboration">', (
 L.easyButton('<img src="images/rotation.png" alt="Start Animation">', () => events.animate()).addTo(map);
 
 
-d3.json("./features-edit.geojson", function (data) { 	
+d3.json("./Feature-withnetwork.geojson", function (data) { 	
 	d3.csv("./data/consump_all_monthlydailysum.csv", (csv) => {
-		buildings = data.features;
+		buildings = data.features.filter((d) => !d.properties.id.includes('NetworkLine'));
+		networkLines = data.features.filter((d) => d.properties.id.includes('NetworkLine'));
 
 		// integrate building data
 		dates = csv.map((d) => parseDate(d.date));
