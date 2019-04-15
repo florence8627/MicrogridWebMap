@@ -22,6 +22,7 @@ let buildings = [];
 // internal event handler
 const events = d3.dispatch('select', 'animate');
 
+const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
 
 const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
@@ -39,8 +40,7 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 			.style('fill', (d) => selectedDate == null || d.properties.phase_1 !== 'yes' ? null : computeConsumptionColor(d))
 			.style('stroke-width', 1 / proj.scale);
 		upd
-			.select('title')
-			.text((d) => `${d.properties.name ? d.properties.name.toUpperCase() : '???'}: ${d.properties.other_tags}`);
+			.select('title').text(computeConsumptionText);
 
 		upd.exit().remove();
 	};
@@ -376,6 +376,15 @@ function computeConsumptionColor(d) {
 		return 'lightgray';
 	}
 	return colorcode(consumption.value, 0, global_max, global_mean);
+}
+
+function computeConsumptionText(d) {
+	if (!selectedDate || d.properties.phase_1 !== 'yes') {
+		return `${d.properties.name ? d.properties.name.toUpperCase() : '???'}: ${d.properties.other_tags}`;
+	}
+	const consumption = d.data.find((d) => d.date.getTime() == selectedDate.getTime());
+	const consumptionText = (consumption == null || isNaN(consumption.value)) ? 'NA' : numberFormat(consumption.value);
+	return `${d.properties.name ? d.properties.name.toUpperCase() : '???'} (${consumptionText}): ${d.properties.other_tags}`;
 }
 
 function colorcode(consumption, min, max, mean){
