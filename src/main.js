@@ -45,7 +45,7 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 	};
 	
 	events.on('select.buildings', updateBuildings);
-	updateBuildings();
+	updateBuildings(selectedDate);
 });
 
 const map = createMap();
