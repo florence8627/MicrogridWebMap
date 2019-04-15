@@ -241,3 +241,28 @@ body {
   fill-opacity: 0.1;
   stroke: none;
 }
+
+#legend {
+  position: absolute;
+  right: 5px;
+  bottom: 100px;
+  height: 20px;
+  width: 300px;
+  z-index: 1000;
+  color: white;
+}
+
+#legend::before {
+  content: attr(data-min);
+  position: absolute;
+  top: 100%;
+  left: 0;
+}
+
+#legend::after {
+  content: attr(data-max);
+  position: absolute;
+  top: 100%;
+  right: 0;
+  text-align: right;
+}

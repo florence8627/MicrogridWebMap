@@ -11,6 +11,7 @@ let sendByTogetherJSPeer = false;
 let bearing = 0;
 // dates that are available
 let dates = [];
+let global_min = 0;
 let global_max = 0;
 let global_mean = 0;
 // currently selected date
@@ -255,12 +256,14 @@ d3.json("./features-edit.geojson", function (data) {
 		});
 		
 		global_mean = d3.mean(buildings, (d) => d3.mean(d.data, (d) => d.value));
+		global_min = d3.min(buildings, (d) => d3.min(d.data, (d) => d.value));
 		global_max = d3.max(buildings, (d) => d3.max(d.data, (d) => d.value));
-
+		
 		//console.log(buildings);
 		// build buildings layer
 		buildingsOverlay.addTo(map);
 		initSlider();
+		initLegend();
 	})
 });
 
@@ -327,6 +330,16 @@ function initSlider() {
 		//slider animation introduction
 		slider.call(brush.extent([firstDate, firstDate])).call(brush.event).transition().ease('linear').duration(10000).call(brush.extent([lastDate, lastDate])).call(brush.event);
 	});
+}
+
+function initLegend() {
+	const scale = d3.scale.linear().domain([0, 100]).range([0, global_max]);
+	const ticks = scale.ticks(20);
+
+	d3.select('#legend')
+		.style('background', `linear-gradient(to right, ${ticks.map((d) => `${colorcode(scale(d), 0, global_max, global_mean)} ${d}%`).join(',')})`)
+		.attr('data-min', 0)
+		.attr('data-max', d3.format('.5s')(global_max));
 }
 
 // sync selection event
