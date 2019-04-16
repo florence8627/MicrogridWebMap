@@ -45,7 +45,12 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 
 		upd.exit().remove();
 	};
-	
+	events.on('select.buildings', updateBuildings);
+	updateBuildings(selectedDate);
+});
+
+
+const networkLinesOverlay = L.d3SvgOverlay((selection, proj) => {
 	const networks = selection.selectAll('path.network').data(networkLines);
 	const networksEnter = networks.enter()
 		.append('path')
@@ -56,10 +61,8 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 		.attr('d', proj.pathFromGeojson)
 		networks.exit().remove();
 	networks.exit().remove();
-
-	events.on('select.buildings', updateBuildings);
-	updateBuildings(selectedDate);
 });
+
 
 const map = createMap();
 
@@ -105,11 +108,12 @@ function createMap() {
 
 	
 	const baseMaps = {
-		"Satelite": tiles_satellite,
-		"Symbolic": tiles_dark
+		Satelite: tiles_satellite,
+		Symbolic: tiles_dark
 	};
 	const overlayMaps = {
-		"Buildings": buildingsOverlay
+		Buildings: buildingsOverlay,
+		NetworkLines: networkLinesOverlay
 	};
 	L.control.layers(baseMaps, overlayMaps).addTo(map);
 	L.control.scale().addTo(map);
@@ -279,6 +283,7 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 		//console.log(buildings);
 		// build buildings layer
 		buildingsOverlay.addTo(map);
+		networkLinesOverlay.addTo(map);
 		initSlider();
 		initLegend();
 	})
