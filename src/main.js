@@ -463,8 +463,13 @@ events.on('selectVisMode.together', (mode) => {
 		TogetherJS.send({type: 'selectVisMode', mode: mode});
 	}
 });
-
-
+TogetherJSConfig_on_ready = () => {
+	const el = kjua({
+		text: TogetherJS.shareUrl(),
+		size: 280,
+	});
+	document.querySelector('#togetherjs-share').appendChild(el);
+};
 function computeConsumptionColor(d) {
 	if (!selectedDate) {
 		return 'white';
