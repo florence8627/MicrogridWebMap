@@ -8,6 +8,7 @@ window.TogetherJSConfig = {
 // indicator whether the event was triggerd by TogetherJS sync operation
 let sendByTogetherJSPeer = false;
 
+let locked = false;
 let bearing = 0;
 // dates that are available
 let dates = [];
@@ -94,13 +95,13 @@ function createMap() {
 		maxZoom: 30,
 		zoomSnap: 0.0,
 		zoomDelta:0.1,
-		rotate: false,
-		zoomControl: false,
-		touchZoom: false,
-		touchRotate: false,
+		rotate: true,
+		zoomControl: true,
+		touchZoom: true,
+		touchRotate: true,
 		boxZoom: false,
 		doubleClickZoom: false,
-		dragging: false,
+		dragging: true,
 		keyboard: false,
 		scrollWheelZoom: false,
 		layers: [tiles_satellite,tiles_dark]
@@ -134,9 +135,26 @@ d3.select(".close").on("click", () => d3.select("#info-panel").style("display","
 
 
 function setBearing() {
+	if (locked) {
+		return;
+	}
 	bearing = bearing-1.5;
     map.setBearing(bearing);
 }
+
+function toggleLock() {
+	locked = !locked;
+	d3.select('.fa-lock,.fa-lock-open').classed('fa-lock', locked).classed('fa-lock-open', !locked);
+
+	if (locked) {
+		map.dragging.disable();
+	} else {
+		map.dragging.enable();
+	}
+
+    map.setBearing(bearing);
+}
+
 
 function generateWeatherChart() {
 	const margin = {top: 5, right: 90, bottom: 30, left: 20};
@@ -251,6 +269,7 @@ function toggleWeather() {
 
 // adding rotation control
 L.easyButton('<i class="fa fa-undo"></i>', setBearing).addTo(map);
+L.easyButton('<i class="fa fa-lock-open"></i>', toggleLock).addTo(map);
 
 // adding additional info panel 
 L.easyButton('<i class="fa fa-cloud-sun" title="Show Weather Plot"></i>', toggleWeather).addTo(map);
