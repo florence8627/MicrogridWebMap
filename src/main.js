@@ -308,7 +308,9 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 		//console.log(buildings);
 		// build buildings layer
 		buildingsOverlay.addTo(map);
-		networkLinesOverlay.addTo(map);
+
+		// disable network layer by default
+		// networkLinesOverlay.addTo(map);
 		initSlider();
 		initLegend();
 	})
