@@ -464,11 +464,16 @@ events.on('selectVisMode.together', (mode) => {
 	}
 });
 TogetherJSConfig_on_ready = () => {
+	const base = document.querySelector('#togetherjs-share');
+
+	if (base.querySelector('img')) {
+		return; // already added
+	}
 	const el = kjua({
 		text: TogetherJS.shareUrl(),
 		size: 280,
 	});
-	document.querySelector('#togetherjs-share').appendChild(el);
+	base.appendChild(el);
 };
 function computeConsumptionColor(d) {
 	if (!selectedDate) {
