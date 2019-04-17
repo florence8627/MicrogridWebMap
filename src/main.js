@@ -365,11 +365,12 @@ function initSlider() {
 	let width = base.property('clientWidth');
 	//console.log(width);
 	
+	const mobileFactor = isMobileVersion ? 5 : 1;
 	const firstDate = dates[0];
 	const lastDate = dates[dates.length - 1];
 	const x = d3.time.scale().domain([firstDate, lastDate]).range([0, width - 50]).clamp(true);
 	
-	const slider = base.attr("width", width).attr("height", 40).append("g").attr("class", "slider").attr("transform","translate(20,10)");
+	const slider = base.attr("width", width).attr("height", mobileFactor * 40).append("g").attr("class", "slider").attr("transform",`translate(20,${mobileFactor * 10})`);
 	slider.append("g").attr("class", "classflow");
 	
 	const axis = d3.svg.axis().scale(x).orient("bottom")
@@ -383,7 +384,7 @@ function initSlider() {
 		.select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
 		.attr("class", "halo");
 
-	const handle = slider.append("circle").attr("class", "handle").attr("r", 10);
+	const handle = slider.append("circle").attr("class", "handle").attr("r", mobileFactor * 10);
 
 	const brush = d3.svg.brush().x(x).extent([firstDate, firstDate]);
 	setSelectedDate(firstDate);
@@ -551,3 +552,5 @@ function colorcode(consumption, min, max, mean) {
 // }
 
 // dragAble('.slider-mover');
+
+d3.select('#slider').classed('mobile', isMobileVersion);

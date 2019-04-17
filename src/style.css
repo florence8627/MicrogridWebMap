@@ -230,6 +230,12 @@ body {
   padding: 5px;
 }
 
+#slider.mobile {
+  top: 25vh;
+  left: 5vw;
+  width: 90vw;
+}
+
 .slider-mover {
   padding-right: 0.5em;
   cursor: grab;
@@ -238,6 +244,10 @@ body {
 .slider-svg {
   flex: 1 1 0;
   height: 40px;
+}
+
+#slider.mobile .slider-svg {
+  height: 200px;
 }
 
 .slider .handle {
