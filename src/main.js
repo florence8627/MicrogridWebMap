@@ -9,7 +9,7 @@ window.TogetherJSConfig = {
 let sendByTogetherJSPeer = false;
 
 let locked = false;
-let bearing = 0;
+let bearing = -9;
 // dates that are available
 let dates = [];
 let global_min = 0;
@@ -71,6 +71,7 @@ const networkLinesOverlay = L.d3SvgOverlay((selection, proj) => {
 
 
 const map = createMap();
+map.setBearing(bearing);
 
 function createMap() {
 	// map box tile layer
@@ -94,7 +95,7 @@ function createMap() {
 
 	
 	const map = L.map("map-canvas", {
-		center: [-37.9109, 145.1344], 
+		center: [-37.9115, 145.1344], 
 		zoom: 17,
 		minZoom: 10,
 		maxZoom: 30,
