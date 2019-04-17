@@ -157,11 +157,17 @@ function createMap() {
 		locked = !locked;
 		d3.select('.fa-lock,.fa-lock-open').classed('fa-lock', locked).classed('fa-lock-open', !locked);
 
-		if (locked) {
-			map.dragging.disable();
-		} else {
-			map.dragging.enable();
-		}
+		const handlers = ['dragging', 'scrollWheelZoom', 'tap', 'doubleClickZoom', 'boxZoom', 'touchZoom'];
+
+		handlers.forEach((d) => {
+			if (map[d] != null) {
+				if (locked) {
+					map[d].disable();
+				} else {
+					map[d].enable();
+				}
+			}
+		});
 
 		map.setBearing(bearing);
 	}

@@ -195,7 +195,7 @@ body {
 }
 
 .axis {
-  font: 10px sans-serif;
+  font: 9px sans-serif;
   -webkit-user-select: none;
   -moz-user-select: none;
   user-select: none;
@@ -297,7 +297,7 @@ body {
 #legend {
   position: absolute;
   right: 5px;
-  bottom: 100px;
+  bottom: 50px;
   height: 20px;
   width: 300px;
   z-index: 1000;
