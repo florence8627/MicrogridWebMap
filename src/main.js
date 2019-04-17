@@ -301,9 +301,10 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 			building.data = dates.map((date, i) => ({date: date, value: parseFloat(csv[i][name])}))
 		});
 		
-		global_mean = d3.mean(buildings, (d) => d3.mean(d.data, (d) => d.value));
-		global_min = d3.min(buildings, (d) => d3.min(d.data, (d) => d.value));
-		global_max = d3.max(buildings, (d) => d3.max(d.data, (d) => d.value));
+		const buildingsWithoutSwitch = buildings.filter((d) => d.properties.name !== 'building_62' && d.properties.phase_1 === 'yes');
+		global_mean = d3.mean(buildingsWithoutSwitch, (d) => d3.mean(d.data, (d) => d.value));
+		global_min = d3.min(buildingsWithoutSwitch, (d) => d3.min(d.data, (d) => d.value));
+		global_max = d3.max(buildingsWithoutSwitch, (d) => d3.max(d.data, (d) => d.value));
 		
 		//console.log(buildings);
 		// build buildings layer
@@ -464,7 +465,7 @@ function colorcode(consumption, min, max, mean) {
         return "lightgray";
 	}
 	
-	const scale = d3.scale.linear().domain([min, max]).range(['#fee8c8', '#e34a33']);
+	const scale = d3.scale.linear().domain([min, max]).range(['#fee8c8', '#e34a33']).clamp(true);
 
 	return scale(consumption);
 }
