@@ -1,9 +1,4 @@
-//togetherjs config //
-window.TogetherJSConfig = {
-	cloneClicks: "#info-panel",
-	suppressJoinConfirmation: true
-};
-
+const isMobileVersion = new MobileDetect(window.navigator.userAgent).mobile() != null;
 
 // indicator whether the event was triggerd by TogetherJS sync operation
 let sendByTogetherJSPeer = false;
@@ -25,54 +20,12 @@ let buildings = [];
 let networkLines = [];
 
 // internal event handler
-const events = d3.dispatch('select', 'selectBuilding', 'selectVisMode', 'animate');
+const events = d3.dispatch('init', 'select', 'selectBuilding', 'selectVisMode', 'animate', 'resize');
 
 const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
 
-const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
-	updateBuildings = () => {
-		const upd = selection.classed('buildings', true).selectAll('path.building').data(buildings);
-		const updEnter = upd.enter()
-			.append('path')
-			.classed('building', true)
-			.on('click', (d) => setSelectedBuilding(d.properties.name));
-
-		updEnter.append('title');
-		upd
-			.classed('phaseN', (d) => d.properties.phase_1 !== 'yes')
-			.attr('id', (d) => d.properties.name)
-			.attr('d', proj.pathFromGeojson)
-			.style('fill', (d) => selectedDate == null || d.properties.phase_1 !== 'yes' ? null : computeConsumptionColor(d))
-			.classed('selected', (d) => d.properties.name === selectedBuilding)
-			.style('stroke-width', 1 / proj.scale);
-		upd
-			.select('title').text(computeConsumptionText);
-
-		upd.exit().remove();
-	};
-	events.on('select.buildings', updateBuildings);
-	events.on('selectBuilding.buildings', updateBuildings);
-	updateBuildings();
-});
-
-
-const networkLinesOverlay = L.d3SvgOverlay((selection, proj) => {
-	const networks = selection.selectAll('path.network').data(networkLines);
-	const networksEnter = networks.enter()
-		.append('path')
-		.classed('network', true);
-
-	networks
-		.attr('id', (d) => d.properties.name)
-		.attr('d', proj.pathFromGeojson)
-		networks.exit().remove();
-	networks.exit().remove();
-});
-
-
-const map = createMap();
-map.setBearing(bearing);
+const map = !isMobileVersion ? createMap() : null;
 
 function createMap() {
 	// map box tile layer
@@ -92,6 +45,45 @@ function createMap() {
 	
 	const tiles_satellite = L.tileLayer('https://api.nearmap.com/tiles/v3/Vert/{z}/{x}/{y}.png?apikey={accessToken}', {
 		accessToken: 'ZDZiOWU0NjctY2NjYS00YWVmLThhNWMtOGM2NTI4N2ZiZGYw'
+	});
+	
+	const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
+		updateBuildings = () => {
+			const upd = selection.classed('buildings', true).selectAll('path.building').data(buildings);
+			const updEnter = upd.enter()
+				.append('path')
+				.classed('building', true)
+				.on('click', (d) => setSelectedBuilding(d.properties.name));
+
+			updEnter.append('title');
+			upd
+				.classed('phaseN', (d) => d.properties.phase_1 !== 'yes')
+				.attr('id', (d) => d.properties.name)
+				.attr('d', proj.pathFromGeojson)
+				.style('fill', (d) => selectedDate == null || d.properties.phase_1 !== 'yes' ? null : computeConsumptionColor(d))
+				.classed('selected', (d) => d.properties.name === selectedBuilding)
+				.style('stroke-width', 1 / proj.scale);
+			upd
+				.select('title').text(computeConsumptionText);
+
+			upd.exit().remove();
+		};
+		events.on('select.buildings', updateBuildings);
+		events.on('selectBuilding.buildings', updateBuildings);
+		updateBuildings();
+	});
+
+	const networkLinesOverlay = L.d3SvgOverlay((selection, proj) => {
+		const networks = selection.selectAll('path.network').data(networkLines);
+		const networksEnter = networks.enter()
+			.append('path')
+			.classed('network', true);
+
+		networks
+			.attr('id', (d) => d.properties.name)
+			.attr('d', proj.pathFromGeojson)
+			networks.exit().remove();
+		networks.exit().remove();
 	});
 
 	
@@ -134,34 +126,60 @@ function createMap() {
 			label:'Distance'
 		}
 	}).addTo(map);
+
+	events.on('init.map', () => {
+		//console.log(buildings);
+		// build buildings layer
+		buildingsOverlay.addTo(map);
+
+		// disable network layer by default
+		// networkLinesOverlay.addTo(map);
+		map.setBearing(bearing);
+	});
+
+	function setBearing() {
+		if (locked) {
+			return;
+		}
+		bearing = bearing-1.5;
+		map.setBearing(bearing);
+	}
+
+	function toggleLock() {
+		locked = !locked;
+		d3.select('.fa-lock,.fa-lock-open').classed('fa-lock', locked).classed('fa-lock-open', !locked);
+
+		if (locked) {
+			map.dragging.disable();
+		} else {
+			map.dragging.enable();
+		}
+
+		map.setBearing(bearing);
+	}
+
+	// adding rotation control
+	L.easyButton('<i class="fa fa-undo"></i>', setBearing).addTo(map);
+	L.easyButton('<i class="fa fa-lock-open"></i>', toggleLock).addTo(map);
+
+	// adding additional info panel 
+	L.easyButton('<i class="fa fa-cloud-sun" title="Show Weather Plot"></i>', toggleWeather).addTo(map);
+
+	// testing collaborative js
+	L.easyButton('<i class="fa fa-users"></i>', () => TogetherJS(this)).addTo(map);
+	// animation
+	L.easyButton('<i class="fa fa-play-circle"></i>', () => events.animate()).addTo(map);
+
+
+	(new L.Control.EasyBar([
+		L.easyButton('<i class="fa fa-power-off" data-mode="consumption"></i>', () => setVisMode('consumption')),
+		L.easyButton('<i class="fa fa-chart-bar" data-mode="bar"></i>', () => setVisMode('bar')),
+		L.easyButton('<i class="fa fa-sun" data-mode="solar"></i>', () => setVisMode('solar')),
+	])).addTo(map);
+
 	
 	return map;
 }
-
-d3.select(".close").on("click", () => d3.select("#info-panel").style("display","none"));
-
-
-function setBearing() {
-	if (locked) {
-		return;
-	}
-	bearing = bearing-1.5;
-    map.setBearing(bearing);
-}
-
-function toggleLock() {
-	locked = !locked;
-	d3.select('.fa-lock,.fa-lock-open').classed('fa-lock', locked).classed('fa-lock-open', !locked);
-
-	if (locked) {
-		map.dragging.disable();
-	} else {
-		map.dragging.enable();
-	}
-
-    map.setBearing(bearing);
-}
-
 
 function generateWeatherChart() {
 	const margin = {top: 5, right: 90, bottom: 30, left: 20};
@@ -263,8 +281,9 @@ function generateWeatherChart() {
 			
 		renderChart(weather_parameters);
 	});
-}
 
+	d3.select(".close").on("click", () => d3.select("#info-panel").style("display","none"));
+}
 
 function toggleWeather() {
 	d3.select("#info-panel").style("display", "block");//generating weather charts
@@ -274,39 +293,8 @@ function toggleWeather() {
 	}
 }
 
-// adding rotation control
-L.easyButton('<i class="fa fa-undo"></i>', setBearing).addTo(map);
-L.easyButton('<i class="fa fa-lock-open"></i>', toggleLock).addTo(map);
-
-// adding additional info panel 
-L.easyButton('<i class="fa fa-cloud-sun" title="Show Weather Plot"></i>', toggleWeather).addTo(map);
-
-// testing collaborative js
-L.easyButton('<i class="fa fa-users"></i>', () => TogetherJS(this)).addTo(map);
-// animation
-L.easyButton('<i class="fa fa-play-circle"></i>', () => events.animate()).addTo(map);
-
-function setVisMode(mode) {
-	if (selectedVisMode === mode) {
-		return;
-	}
-	selectedVisMode = mode;
-	events.selectVisMode(mode);
-
-	Array.from(document.querySelectorAll('.fa[data-mode]')).forEach((d) => {
-		d.parentElement.parentElement.classList.toggle('toggle-selected', d.dataset.mode === mode);
-	});
-}
-
-(new L.Control.EasyBar([
-	L.easyButton('<i class="fa fa-power-off" data-mode="consumption"></i>', () => setVisMode('consumption')),
-	L.easyButton('<i class="fa fa-chart-bar" data-mode="bar"></i>', () => setVisMode('bar')),
-	L.easyButton('<i class="fa fa-sun" data-mode="solar"></i>', () => setVisMode('solar')),
-])).addTo(map);
-
-// default mode
-setVisMode('consumption');
-
+window.addEventListener('resize', () => events.resize());
+ 
 
 d3.json("./Feature-withnetwork.geojson", function (data) { 	
 	d3.csv("./data/consump_all_monthlydailysum.csv", (csv) => {
@@ -327,16 +315,16 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 		global_mean = d3.mean(buildingsWithoutSwitch, (d) => d3.mean(d.data, (d) => d.value));
 		global_min = d3.min(buildingsWithoutSwitch, (d) => d3.min(d.data, (d) => d.value));
 		global_max = d3.max(buildingsWithoutSwitch, (d) => d3.max(d.data, (d) => d.value));
-		
-		//console.log(buildings);
-		// build buildings layer
-		buildingsOverlay.addTo(map);
 
-		// disable network layer by default
-		// networkLinesOverlay.addTo(map);
-		initSlider();
-		initLegend();
+		events.init();
 	})
+});
+
+events.on('init', () => {
+	// default mode
+	setVisMode('consumption');
+	initSlider();
+	initLegend();
 });
 
 
@@ -358,9 +346,22 @@ function setSelectedBuilding(name) {
 	events.selectBuilding(selectedBuilding);
 }
 
+function setVisMode(mode) {
+	if (selectedVisMode === mode) {
+		return;
+	}
+	selectedVisMode = mode;
+	events.selectVisMode(mode);
+
+	Array.from(document.querySelectorAll('.fa[data-mode]')).forEach((d) => {
+		d.parentElement.parentElement.classList.toggle('toggle-selected', d.dataset.mode === mode);
+	});
+}
+
+
 function initSlider() {
 	
-	const width = document.getElementById('map-canvas').offsetWidth;
+	let width = document.getElementById('map-canvas').offsetWidth;
 	//console.log(width);
 	
 	const firstDate = dates[0];
@@ -411,6 +412,18 @@ function initSlider() {
 		//slider animation introduction
 		slider.call(brush.extent([firstDate, firstDate])).call(brush.event).transition().ease('linear').duration(10000).call(brush.extent([lastDate, lastDate])).call(brush.event);
 	});
+
+	events.on('resize.slider', () => {
+		width = document.getElementById('map-canvas').offsetWidth;
+		x.range([0, width - 50]);
+		slider.attr('width', width);
+		slider.select('.x.axis').call(axis);
+		
+		if (selectedDate) {
+			handle.attr("cx", x(selectedDate));
+			brush.extent([selectedDate, selectedDate]);
+		}
+	});
 }
 
 function initLegend() {
@@ -422,6 +435,13 @@ function initLegend() {
 		.attr('data-min', 0)
 		.attr('data-max', d3.format('.5s')(global_max));
 }
+
+//togetherjs config //
+window.TogetherJSConfig = {
+	cloneClicks: "#info-panel",
+	suppressJoinConfirmation: true
+};
+
 
 // sync selection event
 TogetherJSConfig.hub_on = {
