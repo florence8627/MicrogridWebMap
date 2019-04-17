@@ -249,6 +249,10 @@ body {
   stroke: none;
 }
 
+.building.selected {
+  stroke: green;
+}
+
 /* NETWORKS */
 
 .network {

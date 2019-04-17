@@ -17,22 +17,25 @@ let global_max = 0;
 let global_mean = 0;
 // currently selected date
 let selectedDate = null;
+let selectedBuilding = null;
+
 // list of buildings: { properties: { name: string}, data: {date: Date, value: number}[] }
 let buildings = [];
 let networkLines = [];
 
 // internal event handler
-const events = d3.dispatch('select', 'animate');
+const events = d3.dispatch('select', 'selectBuilding', 'animate');
 
 const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
 
 const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
-	updateBuildings = (selectedDate) => {
+	updateBuildings = () => {
 		const upd = selection.classed('buildings', true).selectAll('path.building').data(buildings);
 		const updEnter = upd.enter()
 			.append('path')
-			.classed('building', true);
+			.classed('building', true)
+			.on('click', (d) => setSelectedBuilding(d.properties.name));
 
 		updEnter.append('title');
 		upd
@@ -40,6 +43,7 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 			.attr('id', (d) => d.properties.name)
 			.attr('d', proj.pathFromGeojson)
 			.style('fill', (d) => selectedDate == null || d.properties.phase_1 !== 'yes' ? null : computeConsumptionColor(d))
+			.classed('selected', (d) => d.properties.name === selectedBuilding)
 			.style('stroke-width', 1 / proj.scale);
 		upd
 			.select('title').text(computeConsumptionText);
@@ -47,7 +51,8 @@ const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
 		upd.exit().remove();
 	};
 	events.on('select.buildings', updateBuildings);
-	updateBuildings(selectedDate);
+	events.on('selectBuilding.buildings', updateBuildings);
+	updateBuildings();
 });
 
 
@@ -309,14 +314,23 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 });
 
 
-function setSelectedDate(newDate, byOther) {
+function setSelectedDate(newDate) {
 	if (selectedDate && newDate.getTime() === selectedDate.getTime()) {
 		return;
 	}
 
 	selectedDate = newDate;
-	events.select(newDate, byOther);
-} 
+	events.select(newDate);
+}
+
+function setSelectedBuilding(name) {
+	if (name === selectedBuilding) {
+		name = null;
+	}
+
+	selectedBuilding = name;
+	events.selectBuilding(selectedBuilding);
+}
 
 function initSlider() {
 	
@@ -390,6 +404,11 @@ TogetherJSConfig.hub_on = {
 		setSelectedDate(new Date(msg.date));
 		sendByTogetherJSPeer = false;
 	},
+	selectBuilding: (msg) => {
+		sendByTogetherJSPeer = true;
+		setSelectedBuilding(msg.name);
+		sendByTogetherJSPeer = false;
+	},
 	'togetherjs.hello': () => {
 		// added a new peer, sync the selectedDate
 		console.log('peer added');
@@ -401,6 +420,11 @@ TogetherJSConfig.hub_on = {
 events.on('select.together', (date) => {
 	if (TogetherJS.running && !sendByTogetherJSPeer) {
 		TogetherJS.send({type: 'select', date: date.getTime()});
+	}
+});
+events.on('selectBuilding.together', (name) => {
+	if (TogetherJS.running && !sendByTogetherJSPeer) {
+		TogetherJS.send({type: 'selectBuilding', name: name});
 	}
 });
 
@@ -428,7 +452,7 @@ function computeConsumptionText(d) {
 	return `${d.properties.name ? d.properties.name.toUpperCase() : '???'} (${consumptionText}): ${d.properties.other_tags}`;
 }
 
-function colorcode(consumption, min, max, mean){
+function colorcode(consumption, min, max, mean) {
     //console.log(Consumption);
     if(typeof consumption === 'undefined'){
         return "white";
