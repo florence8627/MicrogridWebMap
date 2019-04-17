@@ -283,3 +283,10 @@ body {
   right: 0;
   text-align: right;
 }
+
+
+/* TOGGLE BUTTON */
+
+button.toggle-selected {
+  background-color: lightgray;
+}

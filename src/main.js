@@ -18,13 +18,14 @@ let global_mean = 0;
 // currently selected date
 let selectedDate = null;
 let selectedBuilding = null;
+let selectedVisMode = null;
 
 // list of buildings: { properties: { name: string}, data: {date: Date, value: number}[] }
 let buildings = [];
 let networkLines = [];
 
 // internal event handler
-const events = d3.dispatch('select', 'selectBuilding', 'animate');
+const events = d3.dispatch('select', 'selectBuilding', 'selectVisMode', 'animate');
 
 const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
@@ -285,6 +286,27 @@ L.easyButton('<i class="fa fa-users"></i>', () => TogetherJS(this)).addTo(map);
 // animation
 L.easyButton('<i class="fa fa-play-circle"></i>', () => events.animate()).addTo(map);
 
+function setVisMode(mode) {
+	if (selectedVisMode === mode) {
+		return;
+	}
+	selectedVisMode = mode;
+	events.selectVisMode(mode);
+
+	Array.from(document.querySelectorAll('.fa[data-mode]')).forEach((d) => {
+		d.parentElement.parentElement.classList.toggle('toggle-selected', d.dataset.mode === mode);
+	});
+}
+
+(new L.Control.EasyBar([
+	L.easyButton('<i class="fa fa-power-off" data-mode="consumption"></i>', () => setVisMode('consumption')),
+	L.easyButton('<i class="fa fa-chart-bar" data-mode="bar"></i>', () => setVisMode('bar')),
+	L.easyButton('<i class="fa fa-sun" data-mode="solar"></i>', () => setVisMode('solar')),
+])).addTo(map);
+
+// default mode
+setVisMode('consumption');
+
 
 d3.json("./Feature-withnetwork.geojson", function (data) { 	
 	d3.csv("./data/consump_all_monthlydailysum.csv", (csv) => {
@@ -413,6 +435,11 @@ TogetherJSConfig.hub_on = {
 		setSelectedBuilding(msg.name);
 		sendByTogetherJSPeer = false;
 	},
+	selectVisMode: (msg) => {
+		sendByTogetherJSPeer = true;
+		setVisMode(msg.mode);
+		sendByTogetherJSPeer = false;
+	},
 	'togetherjs.hello': () => {
 		// added a new peer, sync the selectedDate
 		console.log('peer added');
@@ -429,6 +456,11 @@ events.on('select.together', (date) => {
 events.on('selectBuilding.together', (name) => {
 	if (TogetherJS.running && !sendByTogetherJSPeer) {
 		TogetherJS.send({type: 'selectBuilding', name: name});
+	}
+});
+events.on('selectVisMode.together', (mode) => {
+	if (TogetherJS.running && !sendByTogetherJSPeer) {
+		TogetherJS.send({type: 'selectVisMode', mode: mode});
 	}
 });
 
