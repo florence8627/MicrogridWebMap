@@ -29,11 +29,18 @@ const map = !isMobileVersion ? createMap() : null;
 
 function createMap() {
 	// map box tile layer
-	const tiles_dark = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+	const tiles_bright = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}', {
 		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
-		id: 'mapbox.dark',
+		id: 'sgeoviz/cjdamgdvl92j12sp5049j5xjk',
 		maxZoom:30,
-		accessToken: 'pk.eyJ1IjoiZmxvcmVuY2U4NjI3IiwiYSI6ImNqb294Mmk1MTAzcGQzcG14cXpqZHh1YmMifQ.ahUeysh9RSQJ4jegcGrr4w'
+		accessToken: 'pk.eyJ1Ijoic2dlb3ZpeiIsImEiOiJnZ1VQQ1ZNIn0.kX6gvvUIGV9VGpiixzGtPg'
+	});
+
+	const tiles_dark = L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={accessToken}', {
+		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+		id: 'sgeoviz/cjuhuz4va5ruo1fpp0zaq1lf1',
+		maxZoom:30,
+		accessToken: 'pk.eyJ1Ijoic2dlb3ZpeiIsImEiOiJnZ1VQQ1ZNIn0.kX6gvvUIGV9VGpiixzGtPg'
 	});
 
 	// const tiles_satellite = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
@@ -109,7 +116,8 @@ function createMap() {
 	
 	const baseMaps = {
 		Satelite: tiles_satellite,
-		Symbolic: tiles_dark
+		Symbolic: tiles_dark,
+		'Symbolic (Bright)': tiles_bright
 	};
 	const overlayMaps = {
 		Buildings: buildingsOverlay,
