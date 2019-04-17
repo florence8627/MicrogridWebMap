@@ -250,15 +250,15 @@ function toggleWeather() {
 }
 
 // adding rotation control
-// L.easyButton('<img src="images/rotation.png">', setBearing).addTo(map);
+L.easyButton('<i class="fa fa-undo"></i>', setBearing).addTo(map);
 
 // adding additional info panel 
-L.easyButton('<img src="images/weather.png" alt="Show Weather Plot">', toggleWeather).addTo(map);
+L.easyButton('<i class="fa fa-cloud-sun" title="Show Weather Plot"></i>', toggleWeather).addTo(map);
 
 // testing collaborative js
-L.easyButton('<img src="images/collaborative.png" alt="Start Collaboration">', () => TogetherJS(this)).addTo(map);
+L.easyButton('<i class="fa fa-users"></i>', () => TogetherJS(this)).addTo(map);
 // animation
-L.easyButton('<img src="images/rotation.png" alt="Start Animation">', () => events.animate()).addTo(map);
+L.easyButton('<i class="fa fa-play-circle"></i>', () => events.animate()).addTo(map);
 
 
 d3.json("./Feature-withnetwork.geojson", function (data) { 	
