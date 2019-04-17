@@ -361,14 +361,15 @@ function setVisMode(mode) {
 
 function initSlider() {
 	
-	let width = document.getElementById('map-canvas').offsetWidth;
+	const base = d3.select(".slider-svg");
+	let width = base.property('clientWidth');
 	//console.log(width);
 	
 	const firstDate = dates[0];
 	const lastDate = dates[dates.length - 1];
 	const x = d3.time.scale().domain([firstDate, lastDate]).range([0, width - 50]).clamp(true);
 	
-	const slider = d3.select("#slidersvg").attr("width", width).attr("height", 40).append("g").attr("class", "slider").attr("transform","translate(20,10)");
+	const slider = base.attr("width", width).attr("height", 40).append("g").attr("class", "slider").attr("transform","translate(20,10)");
 	slider.append("g").attr("class", "classflow");
 	
 	const axis = d3.svg.axis().scale(x).orient("bottom")
@@ -414,7 +415,7 @@ function initSlider() {
 	});
 
 	events.on('resize.slider', () => {
-		width = document.getElementById('map-canvas').offsetWidth;
+		width = base.property('clientWidth');
 		x.range([0, width - 50]);
 		slider.attr('width', width);
 		slider.select('.x.axis').call(axis);
@@ -531,3 +532,22 @@ function colorcode(consumption, min, max, mean) {
 
 	return scale(consumption);
 }
+
+// function dragAble(selector) {
+// 	const item = d3.select(selector);
+	
+// 	item.call(d3.behavior.drag()
+// 		// .origin(function () {
+// 		// 	return this.parentElement.parentElement;
+// 		// })
+// 		.on('drag', function () {
+// 			const m = d3.mouse(this.parentElement);
+// 			const parent = d3.select(this.parentElement);
+
+// 			parent.style('left', d3.event.x);
+// 			parent.style('top', d3.event.y);
+// 		})
+// 	)
+// }
+
+// dragAble('.slider-mover');

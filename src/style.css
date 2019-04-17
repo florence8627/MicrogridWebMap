@@ -14,10 +14,12 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 #map-canvas {
-  height: 95%
+  flex: 1 1 0;
 }
 
 .panel {
@@ -213,6 +215,29 @@ body {
   stroke-width: 8px;
   stroke-linecap: round;
 
+}
+
+#slider {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  top: 50px;
+  left: 100px;
+  width: 33vw;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 5px;
+  padding: 5px;
+}
+
+.slider-mover {
+  padding-right: 0.5em;
+  cursor: grab;
+}
+
+.slider-svg {
+  flex: 1 1 0;
+  height: 40px;
 }
 
 .slider .handle {
