@@ -462,19 +462,9 @@ function colorcode(consumption, min, max, mean) {
     }
     if (consumption === 0){
         return "lightgray";
-    }
+	}
+	
+	const scale = d3.scale.linear().domain([min, max]).range(['#fee8c8', '#e34a33']);
 
-    if(consumption > mean){   	  
-        var hue = (1 - Math.log(consumption) / Math.log(max)) * 0.5;
-        return d3.hsl(hue * 360,1, 0.5).toString();
-    }
-
-    if(consumption <= 1.5 * mean){ 
-        //var hue = (1-(Consumption-min)/(max-min))*0.5;
-        var hue = (1-Math.log(consumption)/Math.log(1.5*mean))*0.5;
-        return d3.hsl(hue * 360,1, 0.5).toString();
-        //console.log(Consumption);	 
-    }
-
-    // TODO what color should be used instead?
+	return scale(consumption);
 }
