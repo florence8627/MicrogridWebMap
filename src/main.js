@@ -375,13 +375,13 @@ TogetherJSConfig.hub_on = {
 		// added a new peer, sync the selectedDate
 		console.log('peer added');
 		if (selectedDate) {
-			TogetherJS.send({type: 'select', date: selectedDate.toString()});
+			TogetherJS.send({type: 'select', date: selectedDate.getTime()});
 		}
 	}
 };
 events.on('select.together', (date) => {
 	if (TogetherJS.running && !sendByTogetherJSPeer) {
-		TogetherJS.send({type: 'select', date: date.toString()});
+		TogetherJS.send({type: 'select', date: date.getTime()});
 	}
 });
 
