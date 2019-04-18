@@ -14,6 +14,7 @@ let granularities = [
 		max: NaN,
 		start: null,
 		end: null,
+		parents: [],
 		from: (date) => date.getFullYear(),
 		to: (value) => {
 			value = parseInt(value);
@@ -22,13 +23,15 @@ let granularities = [
 		str: function(value) {
 			return d3.time.format('%Y')(this.to(value))
 		},
-		round: d3.time.year.round
+		round: d3.time.year.round,
+		interval: d3.time.year
 	},
 	{
 		attr: 'monthly',
 		max: NaN,
 		start: null,
 		end: null,
+		parents: [],
 		from: (date) => date.getFullYear() * 12 + date.getMonth(),
 		to: (value) => {
 			value = parseInt(value);
@@ -38,13 +41,15 @@ let granularities = [
 		str: function(value) {
 			return d3.time.format('%b %Y')(this.to(value))
 		},
-		round: d3.time.month.round
+		round: d3.time.month.round,
+		interval: d3.time.month
 	},
 	{
 		attr: 'weekly',
 		max: NaN,
 		start: null,
 		end: null,
+		parents: [],
 		f: d3.time.format('%U'),
 		from: function (date) {
 			return date.getFullYear() * 52 + parseInt(this.f(date));
@@ -57,22 +62,25 @@ let granularities = [
 		str: function(value) {
 			return d3.time.format('%Y #%U')(this.to(value))
 		},
-		round: d3.time.week.round
+		round: d3.time.week.round,
+		interval: d3.time.week
 	},
 	{
 		attr: 'daily',
 		max: NaN,
 		start: null,
 		end: null,
+		parents: [],
 		from: (date) => Math.floor(date.getTime() / millisecPerDay),
 		to: (value) => {
 			value = parseInt(value) * millisecPerDay;
 			return new Date(value);
 		},
 		str: function(value) {
-			return d3.time.format('%d %m %Y')(this.to(value))
+			return d3.time.format('%b %d')(this.to(value))
 		},
-		round: d3.time.day.round
+		round: d3.time.day.round,
+		interval: d3.time.day
 	}
 ];
 // currently selected date
@@ -88,7 +96,7 @@ let relevantBuildings = [];
 let networkLines = [];
 
 // internal event handler
-const events = d3.dispatch('init', 'select', 'selectBuilding', 'selectVisMode', 'animate', 'resize');
+const events = d3.dispatch('init', 'select', 'selectGranularity', 'selectBuilding', 'selectVisMode', 'animate', 'resize');
 
 const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
@@ -417,29 +425,64 @@ events.on('init', () => {
 	relevantBuildings = buildings.filter((d) => d.properties.name !== 'building_62' && d.properties.phase_1 === 'yes');
 	granularities.forEach((gran) => {
 		gran.max = d3.max(relevantBuildings, (b) => d3.max(b[gran.attr], (d) => d.value));
-		gran.start = gran.round(dates[0]);
-		gran.end = gran.round(dates[dates.length - 1]);
+		gran.start = gran.interval.floor(dates[0]);
+		gran.end = gran.interval.floor(dates[dates.length - 1]);
 	});
-	
-	selectedScale.domain([0, selectedGranularity.max]);
 
 	// default mode
 	setVisMode('consumption');
 	//initSlider(toFromYear, '#slider');
 	
+	selectedScale.domain([0, selectedGranularity.max]);
 	initSlider(selectedGranularity, `#slider-${selectedGranularity.attr} .slider-widget`, selectedGranularity.start, selectedGranularity.end);
+
 	updateLegend();
 });
 
+d3.selectAll('.slider-level-down').on('click', function () {
+	const elem = this;
+	const target = elem.closest('.slider').nextElementSibling.dataset.granularity;
+	const base = granularities.find((d) => d.attr === target);
+	const next = Object.assign({}, base, {
+		start: base.interval.floor(selectedDate),
+		end: base.interval.ceil(selectedGranularity.interval.offset(selectedDate, 1)),
+		parents: selectedGranularity.parents.concat([selectedGranularity])
+	});
+	setGranularity(next);
+});
+d3.selectAll('.slider-close').on('click', function () {
+	const elem = this;
+	const target = elem.closest('.slider').previousElementSibling.dataset.granularity;
+	setGranularity(selectedGranularity.parents.find((d) => d.attr === target));
+});
 
-function setSelectedDate(newDate, newGranularity) {
-	if (selectedDate && newDate.getTime() === selectedDate.getTime() && selectedGranularity === newGranularity) {
+function setGranularity(newGranularity) {
+	if (selectedGranularity.attr === newGranularity.attr && selectedGranularity.start.getTime() === newGranularity.start.getTime() && selectedGranularity.end.getTime() === newGranularity.end.getTime()) {
+		return;
+	}
+
+	document.querySelector('.sliders').dataset.granularity = newGranularity.attr;
+	// disable old
+	document.querySelector(`#slider-${selectedGranularity.attr} .slider-widget`).setAttribute('disabled', true);
+	
+	selectedGranularity = newGranularity;
+
+	selectedScale.domain([0, selectedGranularity.max]);
+	initSlider(selectedGranularity, `#slider-${selectedGranularity.attr} .slider-widget`, selectedGranularity.start, selectedGranularity.end);
+	updateLegend();
+
+	events.selectGranularity(selectedGranularity);
+
+	setSelectedDate(selectedGranularity.round(selectedDate));
+}
+
+function setSelectedDate(newDate) {
+	if (selectedDate && newDate.getTime() === selectedDate.getTime()) {
 		return;
 	}
 
 	selectedDate = newDate;
-	selectedGranularity = newGranularity;
-	events.select(newDate, newGranularity);
+	events.select(newDate, selectedGranularity);
 }
 
 function setSelectedBuilding(name) {
@@ -467,6 +510,7 @@ function setVisMode(mode) {
 function initSlider(granularity, selector, firstDate, lastDate) {
 	const elem = document.querySelector(selector);
 	if (elem.noUiSlider) {
+		elem.removeAttribute('disabled');
 		elem.noUiSlider.destroy();
 	}
 	const slider = noUiSlider.create(elem, {
@@ -478,7 +522,7 @@ function initSlider(granularity, selector, firstDate, lastDate) {
 		},
 		step: 1,
 		connect: true,
-		start: [firstDate],
+		start: [selectedDate || firstDate],
 		format: granularity,
 		tooltips: {
 			to: granularity.str.bind(granularity)
@@ -497,7 +541,7 @@ function initSlider(granularity, selector, firstDate, lastDate) {
 	
 	slider.on('update', (values) => {
 		const value = values[0];
-		setSelectedDate(value, granularity);
+		setSelectedDate(value);
 	});
 	events.on('select.' + selector, (date) => {
 		if (!sendByTogetherJSPeer) {
@@ -544,13 +588,15 @@ window.TogetherJSConfig = {
 TogetherJSConfig.hub_on = {
 	select: (msg) => {
 		sendByTogetherJSPeer = true;
-		if (msg.granularity != selectedGranularity.attr) {
+		if (msg.granularity != selectedGranularity.attr || msg.start !== selectedGranularity.start.getTime()) {
 			const g = granularities.find((d) => d.attr === msg.granularity);
-			g.start = new Date(msg.start);
-			g.end = new Date(msg.end);
-		} else {
-			setSelectedDate(new Date(msg.date), selectedGranularity);
+			const next = Object.assign({}, g, {
+				start: new Date(msg.start),
+				end: new Date(msg.end) 
+			});
+			setGranularity(next);
 		}
+		setSelectedDate(new Date(msg.date));
 		sendByTogetherJSPeer = false;
 	},
 	selectBuilding: (msg) => {

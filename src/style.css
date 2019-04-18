@@ -215,6 +215,12 @@ height: 60%;*/
   border-radius: 5px;
 }
 
+.sliders[data-granularity=yearly] > :nth-child(n + 2),
+.sliders[data-granularity=monthly] > :nth-child(n + 3),
+.sliders[data-granularity=weekly] > :nth-child(n + 4) {
+  display: none;
+}
+
 #slider-yearly .fa-times,
 #slider-daily .fa-level-down-alt {
   visibility: hidden;
