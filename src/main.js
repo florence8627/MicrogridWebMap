@@ -398,8 +398,8 @@ function setVisMode(mode) {
 
 
 function initSlider() {
-	const firstDate = dates[0];
-	const lastDate = dates[dates.length - 1];
+	const firstDate = d3.time.month.round(dates[0]);
+	const lastDate = d3.time.month.round(dates[dates.length - 1]);
 
 	const format = d3.time.format('%b %Y');
 
