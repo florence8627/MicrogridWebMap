@@ -374,71 +374,69 @@ function setVisMode(mode) {
 
 
 function initSlider() {
-	
-	const base = d3.select(".slider-svg");
-	let width = base.property('clientWidth');
-	//console.log(width);
-	
-	const mobileFactor = isMobileVersion ? 5 : 1;
 	const firstDate = dates[0];
 	const lastDate = dates[dates.length - 1];
-	const x = d3.time.scale().domain([firstDate, lastDate]).range([0, width - 50]).clamp(true);
-	
-	const slider = base.attr("width", width).attr("height", mobileFactor * 40).append("g").attr("class", "slider").attr("transform",`translate(20,${mobileFactor * 10})`);
-	slider.append("g").attr("class", "classflow");
-	
-	const axis = d3.svg.axis().scale(x).orient("bottom")
-		.tickSize(0)
-		.tickFormat(d3.time.format('%b %Y'))
-		.tickPadding(12);
 
-	slider.append("g").attr("class", "x axis")
-		.call(axis)
-		.select(".domain")
-		.select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
-		.attr("class", "halo");
+	const format = d3.time.format('%b %Y');
 
-	const handle = slider.append("circle").attr("class", "handle").attr("r", mobileFactor * 10);
-
-	const brush = d3.svg.brush().x(x).extent([firstDate, firstDate]);
-	setSelectedDate(firstDate);
-
-	brush.on("brush", function () {
-		let value = brush.extent()[0];
-		if (d3.event.sourceEvent) { // not a programmatic event
-			value = x.invert(d3.mouse(this)[0]);
-			brush.extent([value, value]);
+	const parser = {
+		from: (date) => date.getFullYear() * 12 + date.getMonth(),
+		to: (months) => {
+			const m = months % 12;
+			return new Date((months - m) / 12, m, 1);
 		}
-		handle.attr("cx", x(value));
-		const newDate = d3.time.month.round(value);
-		setSelectedDate(newDate);
-	});
-	slider.call(brush);
+	};
 
+	const formatter = {
+		from: (str) => +str,
+		to: (months) => format(new Date(months / 12, months % 12, 1))
+	};
+
+	const slider = noUiSlider.create(document.querySelector('#slider'), {
+		behavior: 'tap-drag',
+		// Create two timestamps to define a range.
+		range: {
+			min: parser.from(firstDate),
+			max: parser.from(lastDate)
+		},
+		step: 1,
+		start: [firstDate],
+		format: parser,
+
+		// Show a scale with the slider
+		pips: {
+			mode: 'steps',
+			stepped: true,
+			format: formatter,
+			density: 4
+		}
+	});
+	
+	slider.on('update', (values) => {
+		const value = values[0];
+		setSelectedDate(value);
+	});
 	events.on('select.slider', (date) => {
 		if (!sendByTogetherJSPeer) {
 			return;
 		}
-		handle.attr("cx", x(date));
-		brush.extent([date, date]);
+		slider.set([date]);
 	});
 
-	
 	events.on('animate.slider', () => {
-		//slider animation introduction
-		slider.call(brush.extent([firstDate, firstDate])).call(brush.event).transition().ease('linear').duration(10000).call(brush.extent([lastDate, lastDate])).call(brush.event);
-	});
+		const range = d3.range(parser.from(firstDate), parser.from(lastDate) + 1, 1);
+		const interval = 10000 / (range.length - 1);
+		function set() {
+			const v = range.shift();
+			const date = parser.to(v);
+			slider.set([date]);
+			setSelectedDate(date);
 
-	events.on('resize.slider', () => {
-		width = base.property('clientWidth');
-		x.range([0, width - 50]);
-		slider.attr('width', width);
-		slider.select('.x.axis').call(axis);
-		
-		if (selectedDate) {
-			handle.attr("cx", x(selectedDate));
-			brush.extent([selectedDate, selectedDate]);
+			if (range.length > 0) {
+				setTimeout(set, interval)
+			}
 		}
+		setTimeout(set, interval);
 	});
 }
 
