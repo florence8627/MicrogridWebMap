@@ -7,16 +7,84 @@ let locked = false;
 let bearing = -9;
 // dates that are available
 let dates = [];
-let global_monthly_min = 0;
-let global_monthly_max = 0;
-let global_monthly_mean = 0;
+const millisecPerDay = 24 * 60 * 60 * 1000;
+let granularities = [
+	{
+		attr: 'yearly',
+		max: NaN,
+		start: null,
+		end: null,
+		from: (date) => date.getFullYear(),
+		to: (value) => {
+			value = parseInt(value);
+			return new Date(value, 1, 1);
+		},
+		str: function(value) {
+			return d3.time.format('%Y')(this.to(value))
+		},
+		round: d3.time.year.round
+	},
+	{
+		attr: 'monthly',
+		max: NaN,
+		start: null,
+		end: null,
+		from: (date) => date.getFullYear() * 12 + date.getMonth(),
+		to: (value) => {
+			value = parseInt(value);
+			const m = value % 12;
+			return new Date((value - m) / 12, m, 1);
+		},
+		str: function(value) {
+			return d3.time.format('%b %Y')(this.to(value))
+		},
+		round: d3.time.month.round
+	},
+	{
+		attr: 'weekly',
+		max: NaN,
+		start: null,
+		end: null,
+		f: d3.time.format('%U'),
+		from: function (date) {
+			return date.getFullYear() * 52 + parseInt(this.f(date));
+		},
+		to: function (value) {
+			value = parseInt(value);
+			const m = value % 52;
+			return d3.time.format('%Y %U').parse(`${(value - m) / 52} ${m}`);
+		},
+		str: function(value) {
+			return d3.time.format('%Y #%U')(this.to(value))
+		},
+		round: d3.time.week.round
+	},
+	{
+		attr: 'daily',
+		max: NaN,
+		start: null,
+		end: null,
+		from: (date) => Math.floor(date.getTime() / millisecPerDay),
+		to: (value) => {
+			value = parseInt(value) * millisecPerDay;
+			return new Date(value);
+		},
+		str: function(value) {
+			return d3.time.format('%d %m %Y')(this.to(value))
+		},
+		round: d3.time.day.round
+	}
+];
 // currently selected date
 let selectedDate = null;
+let selectedGranularity = granularities[0]; // year
 let selectedBuilding = null;
 let selectedVisMode = null;
+let selectedScale = d3.scale.linear().domain([0, 100]).range(['#fee8c8', '#e34a33']).clamp(true);
 
 // list of buildings: { properties: { name: string}, data: {date: Date, value: number}[] }
 let buildings = [];
+let relevantBuildings = [];
 let networkLines = [];
 
 // internal event handler
@@ -25,29 +93,6 @@ const events = d3.dispatch('init', 'select', 'selectBuilding', 'selectVisMode', 
 const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
 
-const toFromMonth = {
-	from: (date) => date.getFullYear() * 12 + date.getMonth(),
-	to: (value) => {
-		value = parseInt(value);
-		const m = value % 12;
-		return new Date((value - m) / 12, m, 1);
-	},
-	str: function(value) {
-		return d3.time.format('%b %Y')(this.to(value))
-	},
-	round: d3.time.month.round
-};
-const toFromYear = {
-	from: (date) => date.getFullYear(),
-	to: (value) => {
-		value = parseInt(value);
-		return new Date(value, 1, 1);
-	},
-	str: function(value) {
-		return d3.time.format('%Y')(this.to(value))
-	},
-	round: d3.time.year.round
-};
 
 const map = !isMobileVersion ? createMap() : null;
 
@@ -363,32 +408,38 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 			building.monthly = aggregate(d3.time.format('%Y-%m'));
 			building.yearly = aggregate(d3.time.format('%Y'));
 		});
-		
-		const buildingsWithoutSwitch = buildings.filter((d) => d.properties.name !== 'building_62' && d.properties.phase_1 === 'yes');
-		global_monthly_mean = d3.mean(buildingsWithoutSwitch, (d) => d3.mean(d.monthly, (d) => d.value));
-		global_monthly_min = d3.min(buildingsWithoutSwitch, (d) => d3.min(d.monthly, (d) => d.value));
-		global_monthly_max = d3.max(buildingsWithoutSwitch, (d) => d3.max(d.monthly, (d) => d.value));
 
 		events.init();
 	})
 });
 
 events.on('init', () => {
+	relevantBuildings = buildings.filter((d) => d.properties.name !== 'building_62' && d.properties.phase_1 === 'yes');
+	granularities.forEach((gran) => {
+		gran.max = d3.max(relevantBuildings, (b) => d3.max(b[gran.attr], (d) => d.value));
+		gran.start = gran.round(dates[0]);
+		gran.end = gran.round(dates[dates.length - 1]);
+	});
+	
+	selectedScale.domain([0, selectedGranularity.max]);
+
 	// default mode
 	setVisMode('consumption');
 	//initSlider(toFromYear, '#slider');
-	initSlider(toFromMonth, '#slider');
-	initLegend();
+	
+	initSlider(selectedGranularity, `#slider-${selectedGranularity.attr} .slider-widget`, selectedGranularity.start, selectedGranularity.end);
+	updateLegend();
 });
 
 
-function setSelectedDate(newDate) {
-	if (selectedDate && newDate.getTime() === selectedDate.getTime()) {
+function setSelectedDate(newDate, newGranularity) {
+	if (selectedDate && newDate.getTime() === selectedDate.getTime() && selectedGranularity === newGranularity) {
 		return;
 	}
 
 	selectedDate = newDate;
-	events.select(newDate);
+	selectedGranularity = newGranularity;
+	events.select(newDate, newGranularity);
 }
 
 function setSelectedBuilding(name) {
@@ -413,23 +464,24 @@ function setVisMode(mode) {
 }
 
 
-function initSlider(formatter, selector) {
-	const firstDate = formatter.round(dates[0]);
-	const lastDate = formatter.round(dates[dates.length - 1]);
-
-	const slider = noUiSlider.create(document.querySelector(selector), {
+function initSlider(granularity, selector, firstDate, lastDate) {
+	const elem = document.querySelector(selector);
+	if (elem.noUiSlider) {
+		elem.noUiSlider.destroy();
+	}
+	const slider = noUiSlider.create(elem, {
 		behavior: 'tap-drag',
 		// Create two timestamps to define a range.
 		range: {
-			min: formatter.from(firstDate),
-			max: formatter.from(lastDate)
+			min: granularity.from(firstDate),
+			max: granularity.from(lastDate)
 		},
 		step: 1,
 		connect: true,
 		start: [firstDate],
-		format: formatter,
+		format: granularity,
 		tooltips: {
-			to: formatter.str.bind(formatter)
+			to: granularity.str.bind(granularity)
 		},
 		// Show a scale with the slider
 		pips: {
@@ -438,14 +490,14 @@ function initSlider(formatter, selector) {
 			density: 2,
 			values: 7,
 			format: {
-				to: formatter.str.bind(formatter)
+				to: granularity.str.bind(granularity)
 			}
 		}
 	});
 	
 	slider.on('update', (values) => {
 		const value = values[0];
-		setSelectedDate(value);
+		setSelectedDate(value, granularity);
 	});
 	events.on('select.' + selector, (date) => {
 		if (!sendByTogetherJSPeer) {
@@ -454,14 +506,14 @@ function initSlider(formatter, selector) {
 		slider.set([date]);
 	});
 
-	events.on('animate.' + selector, () => {
-		const range = d3.range(formatter.from(firstDate), formatter.from(lastDate) + 1, 1);
+	events.on('animate.slider', () => {
+		const range = d3.range(granularity.from(firstDate), granularity.from(lastDate) + 1, 1);
 		const interval = 10000 / (range.length - 1);
 		function set() {
 			const v = range.shift();
-			const date = formatter.to(v);
+			const date = granularity.to(v);
 			slider.set([date]);
-			setSelectedDate(date);
+			setSelectedDate(date, granularity);
 
 			if (range.length > 0) {
 				setTimeout(set, interval)
@@ -471,14 +523,14 @@ function initSlider(formatter, selector) {
 	});
 }
 
-function initLegend() {
-	const scale = d3.scale.linear().domain([0, 100]).range([0, global_monthly_max]);
+function updateLegend() {
+	const scale = d3.scale.linear().domain([0, 100]).range(selectedScale.domain());
 	const ticks = scale.ticks(20);
 
 	d3.select('#legend')
-		.style('background', `linear-gradient(to right, ${ticks.map((d) => `${colorcode(scale(d), 0, global_monthly_max, global_monthly_mean)} ${d}%`).join(',')})`)
+		.style('background', `linear-gradient(to right, ${ticks.map((d) => `${colorcode(scale(d))} ${d}%`).join(',')})`)
 		.attr('data-min', 0)
-		.attr('data-max', d3.format('.5s')(global_monthly_max));
+		.attr('data-max', d3.format('.5s')(scale.range()[1]));
 }
 
 //togetherjs config //
@@ -492,7 +544,13 @@ window.TogetherJSConfig = {
 TogetherJSConfig.hub_on = {
 	select: (msg) => {
 		sendByTogetherJSPeer = true;
-		setSelectedDate(new Date(msg.date));
+		if (msg.granularity != selectedGranularity.attr) {
+			const g = granularities.find((d) => d.attr === msg.granularity);
+			g.start = new Date(msg.start);
+			g.end = new Date(msg.end);
+		} else {
+			setSelectedDate(new Date(msg.date), selectedGranularity);
+		}
 		sendByTogetherJSPeer = false;
 	},
 	selectBuilding: (msg) => {
@@ -509,13 +567,25 @@ TogetherJSConfig.hub_on = {
 		// added a new peer, sync the selectedDate
 		console.log('peer added');
 		if (selectedDate) {
-			TogetherJS.send({type: 'select', date: selectedDate.getTime()});
+			TogetherJS.send({
+				type: 'select',
+				date: selectedDate.getTime(),
+				granularity: selectedGranularity.attr,
+				start: selectedGranularity.start.getTime(),
+				end: selectedGranularity.end.getTime()
+			});
 		}
 	}
 };
-events.on('select.together', (date) => {
+events.on('select.together', (date, granularity) => {
 	if (TogetherJS.running && !sendByTogetherJSPeer) {
-		TogetherJS.send({type: 'select', date: date.getTime()});
+		TogetherJS.send({
+			type: 'select',
+			date: date.getTime(),
+			granularity: granularity.attr,
+			start: granularity.start.getTime(),
+			end: granularity.end.getTime()
+		});
 	}
 });
 events.on('selectBuilding.together', (name) => {
@@ -540,30 +610,35 @@ TogetherJSConfig_on_ready = () => {
 	});
 	base.appendChild(el);
 };
+
+function findSelectedConsumption(building) {
+	return building.monthly.find((d) => d.date.getTime() == selectedDate.getTime());
+}
+
 function computeConsumptionColor(d) {
 	if (!selectedDate) {
 		return 'white';
 	}
-	const consumption = d.monthly.find((d) => d.date.getTime() == selectedDate.getTime());
+	const consumption = findSelectedConsumption(d);
 	if (consumption == null || isNaN(consumption.value)) {
 		return 'white';
 	}
 	if (consumption.value === 0) {
 		return 'lightgray';
 	}
-	return colorcode(consumption.value, 0, global_monthly_max, global_monthly_mean);
+	return colorcode(consumption.value);
 }
 
 function computeConsumptionText(d) {
 	if (!selectedDate || d.properties.phase_1 !== 'yes') {
 		return `${d.properties.name ? d.properties.name.toUpperCase() : '???'}: ${d.properties.other_tags}`;
 	}
-	const consumption = d.monthly.find((d) => d.date.getTime() == selectedDate.getTime());
+	const consumption = findSelectedConsumption(d);
 	const consumptionText = (consumption == null || isNaN(consumption.value)) ? 'NA' : numberFormat(consumption.value);
 	return `${d.properties.name ? d.properties.name.toUpperCase() : '???'} (${consumptionText}): ${d.properties.other_tags}`;
 }
 
-function colorcode(consumption, min, max, mean) {
+function colorcode(consumption) {
     //console.log(Consumption);
     if(typeof consumption === 'undefined'){
         return "white";
@@ -572,9 +647,7 @@ function colorcode(consumption, min, max, mean) {
         return "lightgray";
 	}
 	
-	const scale = d3.scale.linear().domain([min, max]).range(['#fee8c8', '#e34a33']).clamp(true);
-
-	return scale(consumption);
+	return selectedScale(consumption);
 }
 
 // function dragAble(selector) {
