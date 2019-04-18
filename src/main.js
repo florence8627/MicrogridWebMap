@@ -311,15 +311,12 @@ window.addEventListener('resize', () => events.resize());
  
 
 d3.json("./Feature-withnetwork.geojson", function (data) { 	
-	d3.csv("./data/consump_all_monthlydailysum.csv", (csv) => {
-		buildings = data.features.filter((d) => !d.properties.id.includes('NetworkLine'));
-		networkLines = data.features.filter((d) => d.properties.id.includes('NetworkLine'));
-
+	buildings = data.features.filter((d) => !d.properties.id.includes('NetworkLine'));
+	networkLines = data.features.filter((d) => d.properties.id.includes('NetworkLine'));
+	
+	d3.csv("./data/daily.csv", (csv) => {	
 		// integrate building data
 		dates = csv.map((d) => parseDate(d.date));
-		csv.forEach((row) => {
-			Object.keys(row).forEach((key) => row[key.toLowerCase()] = row[key]);
-		})
 		buildings.forEach((building) => {
 			const name = (building.properties.name || '').toLowerCase();
 			building.data = dates.map((date, i) => ({date: date, value: parseFloat(csv[i][name])}))
@@ -400,6 +397,7 @@ function initSlider() {
 			max: parser.from(lastDate)
 		},
 		step: 1,
+		connect: true,
 		start: [firstDate],
 		format: parser,
 
