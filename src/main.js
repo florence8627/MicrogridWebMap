@@ -25,6 +25,15 @@ const events = d3.dispatch('init', 'select', 'selectBuilding', 'selectVisMode', 
 const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
 
+const toFromMonths = {
+	from: (date) => date.getFullYear() * 12 + date.getMonth(),
+	to: (months) => {
+		months = parseInt(months);
+		const m = months % 12;
+		return new Date((months - m) / 12, m, 1);
+	}
+};
+
 const map = !isMobileVersion ? createMap() : null;
 
 function createMap() {
@@ -319,7 +328,16 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 		dates = csv.map((d) => parseDate(d.date));
 		buildings.forEach((building) => {
 			const name = (building.properties.name || '').toLowerCase();
-			building.data = dates.map((date, i) => ({date: date, value: parseFloat(csv[i][name])}))
+			building.daily = dates.map((date, i) => ({date: date, value: parseFloat(csv[i][name])}))
+			const data = d3.nest().key((d) => toFromMonths.from(d.date)).entries(building.daily);
+			building.data = data.map((d) => {
+				const value = d3.sum(d.values.filter((d) => !isNaN(d.value)), (d) => d.value);
+				return {
+					date: toFromMonths.to(d.key),
+					values: d.values,
+					value: value === 0 ? NaN : value 
+				};
+			});
 		});
 		
 		const buildingsWithoutSwitch = buildings.filter((d) => d.properties.name !== 'building_62' && d.properties.phase_1 === 'yes');
@@ -376,14 +394,6 @@ function initSlider() {
 
 	const format = d3.time.format('%b %Y');
 
-	const parser = {
-		from: (date) => date.getFullYear() * 12 + date.getMonth(),
-		to: (months) => {
-			const m = months % 12;
-			return new Date((months - m) / 12, m, 1);
-		}
-	};
-
 	const formatter = {
 		from: (str) => +str,
 		to: (months) => format(new Date(months / 12, months % 12, 1))
@@ -393,20 +403,21 @@ function initSlider() {
 		behavior: 'tap-drag',
 		// Create two timestamps to define a range.
 		range: {
-			min: parser.from(firstDate),
-			max: parser.from(lastDate)
+			min: toFromMonths.from(firstDate),
+			max: toFromMonths.from(lastDate)
 		},
 		step: 1,
 		connect: true,
 		start: [firstDate],
-		format: parser,
+		format: toFromMonths,
 
 		// Show a scale with the slider
 		pips: {
-			mode: 'steps',
+			mode: 'count',
 			stepped: true,
-			format: formatter,
-			density: 4
+			density: 2,
+			values: 7,
+			format: formatter
 		}
 	});
 	
@@ -422,11 +433,11 @@ function initSlider() {
 	});
 
 	events.on('animate.slider', () => {
-		const range = d3.range(parser.from(firstDate), parser.from(lastDate) + 1, 1);
+		const range = d3.range(toFromMonths.from(firstDate), toFromMonths.from(lastDate) + 1, 1);
 		const interval = 10000 / (range.length - 1);
 		function set() {
 			const v = range.shift();
-			const date = parser.to(v);
+			const date = toFromMonths.to(v);
 			slider.set([date]);
 			setSelectedDate(date);
 
