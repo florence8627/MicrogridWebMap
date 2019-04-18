@@ -25,13 +25,28 @@ const events = d3.dispatch('init', 'select', 'selectBuilding', 'selectVisMode', 
 const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
 
-const toFromMonths = {
+const toFromMonth = {
 	from: (date) => date.getFullYear() * 12 + date.getMonth(),
-	to: (months) => {
-		months = parseInt(months);
-		const m = months % 12;
-		return new Date((months - m) / 12, m, 1);
-	}
+	to: (value) => {
+		value = parseInt(value);
+		const m = value % 12;
+		return new Date((value - m) / 12, m, 1);
+	},
+	str: function(value) {
+		return d3.time.format('%b %Y')(this.to(value))
+	},
+	round: d3.time.month.round
+};
+const toFromYear = {
+	from: (date) => date.getFullYear(),
+	to: (value) => {
+		value = parseInt(value);
+		return new Date(value, 1, 1);
+	},
+	str: function(value) {
+		return d3.time.format('%Y')(this.to(value))
+	},
+	round: d3.time.year.round
 };
 
 const map = !isMobileVersion ? createMap() : null;
@@ -361,7 +376,8 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 events.on('init', () => {
 	// default mode
 	setVisMode('consumption');
-	initSlider();
+	//initSlider(toFromYear, '#slider');
+	initSlider(toFromMonth, '#slider');
 	initLegend();
 });
 
@@ -397,36 +413,33 @@ function setVisMode(mode) {
 }
 
 
-function initSlider() {
-	const firstDate = d3.time.month.round(dates[0]);
-	const lastDate = d3.time.month.round(dates[dates.length - 1]);
+function initSlider(formatter, selector) {
+	const firstDate = formatter.round(dates[0]);
+	const lastDate = formatter.round(dates[dates.length - 1]);
 
-	const format = d3.time.format('%b %Y');
-
-	const formatter = {
-		from: (str) => +str,
-		to: (months) => format(new Date(months / 12, months % 12, 1))
-	};
-
-	const slider = noUiSlider.create(document.querySelector('#slider'), {
+	const slider = noUiSlider.create(document.querySelector(selector), {
 		behavior: 'tap-drag',
 		// Create two timestamps to define a range.
 		range: {
-			min: toFromMonths.from(firstDate),
-			max: toFromMonths.from(lastDate)
+			min: formatter.from(firstDate),
+			max: formatter.from(lastDate)
 		},
 		step: 1,
 		connect: true,
 		start: [firstDate],
-		format: toFromMonths,
-
+		format: formatter,
+		tooltips: {
+			to: formatter.str.bind(formatter)
+		},
 		// Show a scale with the slider
 		pips: {
 			mode: 'count',
 			stepped: true,
 			density: 2,
 			values: 7,
-			format: formatter
+			format: {
+				to: formatter.str.bind(formatter)
+			}
 		}
 	});
 	
@@ -434,19 +447,19 @@ function initSlider() {
 		const value = values[0];
 		setSelectedDate(value);
 	});
-	events.on('select.slider', (date) => {
+	events.on('select.' + selector, (date) => {
 		if (!sendByTogetherJSPeer) {
 			return;
 		}
 		slider.set([date]);
 	});
 
-	events.on('animate.slider', () => {
-		const range = d3.range(toFromMonths.from(firstDate), toFromMonths.from(lastDate) + 1, 1);
+	events.on('animate.' + selector, () => {
+		const range = d3.range(formatter.from(firstDate), formatter.from(lastDate) + 1, 1);
 		const interval = 10000 / (range.length - 1);
 		function set() {
 			const v = range.shift();
-			const date = toFromMonths.to(v);
+			const date = formatter.to(v);
 			slider.set([date]);
 			setSelectedDate(date);
 
