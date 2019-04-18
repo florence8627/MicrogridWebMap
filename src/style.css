@@ -26,26 +26,24 @@ body {
 
 .panel {
   position: absolute;
-  z-index: 1000;
-  left: 5%;
-  top: 1%;
-  width: 40%;
-  height: 30%;
+  z-index: 1002;
+  left: 60px;
+  top: 120px;
+  width: 33vw;
+  height: 30vh;
   display: none;
   align-content: left;
-
 }
 
 .panel-content {
   background-color: #000000;
   opacity: 0.65;
-
   padding: 5px;
   /*border: 1px solid #888;*/
   /*  width : 65%;  Could be more or less, depending on screen size 
 height: 60%;*/
   border: 2px solid gray;
-  border-radius: 25px;
+  border-radius: 5px;
 
 
 }
@@ -210,10 +208,11 @@ height: 60%;*/
 #slider::before {
   content: '';
   position: absolute;
-  right: -3em;
-  top: -1em;
-  left: -3em;
+  right: -40px;
+  top: -16px;
+  left: -40px;
   bottom: -3em;
+  border: 2px solid gray;
   background: rgba(0, 0, 0, 0.8);
   border-radius: 5px;
 }
