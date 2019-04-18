@@ -18,7 +18,7 @@ let granularities = [
 		from: (date) => date.getFullYear(),
 		to: (value) => {
 			value = parseInt(value);
-			return new Date(value, 1, 1);
+			return new Date(value, 0, 1);
 		},
 		str: function(value) {
 			return d3.time.format('%Y')(this.to(value))
@@ -57,7 +57,7 @@ let granularities = [
 		to: function (value) {
 			value = parseInt(value);
 			const m = value % 52;
-			return d3.time.format('%Y %U').parse(`${(value - m) / 52} ${m}`);
+			return d3.time.week.round(d3.time.format('%Y %U').parse(`${(value - m) / 52} ${m}`));
 		},
 		str: function(value) {
 			return d3.time.format('%Y #%U')(this.to(value))
@@ -72,9 +72,9 @@ let granularities = [
 		end: null,
 		parents: [],
 		from: (date) => Math.floor(date.getTime() / millisecPerDay),
-		to: (value) => {
+		to: function(value) {
 			value = parseInt(value) * millisecPerDay;
-			return new Date(value);
+			return d3.time.day.round(new Date(value));
 		},
 		str: function(value) {
 			return d3.time.format('%b %d')(this.to(value))
@@ -445,7 +445,7 @@ d3.selectAll('.slider-level-down').on('click', function () {
 	const base = granularities.find((d) => d.attr === target);
 	const next = Object.assign({}, base, {
 		start: base.interval.floor(selectedDate),
-		end: base.interval.ceil(selectedGranularity.interval.offset(selectedDate, 1)),
+		end: base.interval.offset(base.interval.floor(selectedGranularity.interval.offset(selectedDate, 1)), -1),
 		parents: selectedGranularity.parents.concat([selectedGranularity])
 	});
 	setGranularity(next);
@@ -658,7 +658,7 @@ TogetherJSConfig_on_ready = () => {
 };
 
 function findSelectedConsumption(building) {
-	return building.monthly.find((d) => d.date.getTime() == selectedDate.getTime());
+	return building[selectedGranularity.attr].find((d) => d.date.getTime() == selectedDate.getTime());
 }
 
 function computeConsumptionColor(d) {
