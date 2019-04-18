@@ -7,9 +7,9 @@ let locked = false;
 let bearing = -9;
 // dates that are available
 let dates = [];
-let global_min = 0;
-let global_max = 0;
-let global_mean = 0;
+let global_monthly_min = 0;
+let global_monthly_max = 0;
+let global_monthly_mean = 0;
 // currently selected date
 let selectedDate = null;
 let selectedBuilding = null;
@@ -329,21 +329,30 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 		buildings.forEach((building) => {
 			const name = (building.properties.name || '').toLowerCase();
 			building.daily = dates.map((date, i) => ({date: date, value: parseFloat(csv[i][name])}))
-			const data = d3.nest().key((d) => toFromMonths.from(d.date)).entries(building.daily);
-			building.data = data.map((d) => {
-				const value = d3.sum(d.values.filter((d) => !isNaN(d.value)), (d) => d.value);
-				return {
-					date: toFromMonths.to(d.key),
-					values: d.values,
-					value: value === 0 ? NaN : value 
-				};
-			});
+
+			function aggregate(toKey) {
+				const agg = d3.nest().key((d) => toKey(d.date)).entries(building.daily);
+				return agg.map((d) => {
+					const values = d.values.filter((d) => !isNaN(d.value)).map((d) => d.value);
+					const value = d3.sum(values);
+					return {
+						date: toKey.parse(d.key),
+						values: d.values,
+						value: value === 0 ? NaN : value,
+						mean: values.length === 0 ? NaN : d3.mean(values),
+						median: values.length === 0 ? NaN : d3.median(values)
+					};
+				});
+			}
+			building.weekly = aggregate(d3.time.format('%Y-%U'));
+			building.monthly = aggregate(d3.time.format('%Y-%m'));
+			building.yearly = aggregate(d3.time.format('%Y'));
 		});
 		
 		const buildingsWithoutSwitch = buildings.filter((d) => d.properties.name !== 'building_62' && d.properties.phase_1 === 'yes');
-		global_mean = d3.mean(buildingsWithoutSwitch, (d) => d3.mean(d.data, (d) => d.value));
-		global_min = d3.min(buildingsWithoutSwitch, (d) => d3.min(d.data, (d) => d.value));
-		global_max = d3.max(buildingsWithoutSwitch, (d) => d3.max(d.data, (d) => d.value));
+		global_monthly_mean = d3.mean(buildingsWithoutSwitch, (d) => d3.mean(d.monthly, (d) => d.value));
+		global_monthly_min = d3.min(buildingsWithoutSwitch, (d) => d3.min(d.monthly, (d) => d.value));
+		global_monthly_max = d3.max(buildingsWithoutSwitch, (d) => d3.max(d.monthly, (d) => d.value));
 
 		events.init();
 	})
@@ -450,13 +459,13 @@ function initSlider() {
 }
 
 function initLegend() {
-	const scale = d3.scale.linear().domain([0, 100]).range([0, global_max]);
+	const scale = d3.scale.linear().domain([0, 100]).range([0, global_monthly_max]);
 	const ticks = scale.ticks(20);
 
 	d3.select('#legend')
-		.style('background', `linear-gradient(to right, ${ticks.map((d) => `${colorcode(scale(d), 0, global_max, global_mean)} ${d}%`).join(',')})`)
+		.style('background', `linear-gradient(to right, ${ticks.map((d) => `${colorcode(scale(d), 0, global_monthly_max, global_monthly_mean)} ${d}%`).join(',')})`)
 		.attr('data-min', 0)
-		.attr('data-max', d3.format('.5s')(global_max));
+		.attr('data-max', d3.format('.5s')(global_monthly_max));
 }
 
 //togetherjs config //
@@ -522,21 +531,21 @@ function computeConsumptionColor(d) {
 	if (!selectedDate) {
 		return 'white';
 	}
-	const consumption = d.data.find((d) => d.date.getTime() == selectedDate.getTime());
+	const consumption = d.monthly.find((d) => d.date.getTime() == selectedDate.getTime());
 	if (consumption == null || isNaN(consumption.value)) {
 		return 'white';
 	}
 	if (consumption.value === 0) {
 		return 'lightgray';
 	}
-	return colorcode(consumption.value, 0, global_max, global_mean);
+	return colorcode(consumption.value, 0, global_monthly_max, global_monthly_mean);
 }
 
 function computeConsumptionText(d) {
 	if (!selectedDate || d.properties.phase_1 !== 'yes') {
 		return `${d.properties.name ? d.properties.name.toUpperCase() : '???'}: ${d.properties.other_tags}`;
 	}
-	const consumption = d.data.find((d) => d.date.getTime() == selectedDate.getTime());
+	const consumption = d.monthly.find((d) => d.date.getTime() == selectedDate.getTime());
 	const consumptionText = (consumption == null || isNaN(consumption.value)) ? 'NA' : numberFormat(consumption.value);
 	return `${d.properties.name ? d.properties.name.toUpperCase() : '???'} (${consumptionText}): ${d.properties.other_tags}`;
 }
