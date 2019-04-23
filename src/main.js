@@ -639,6 +639,11 @@ events.on('selectBuilding.together', (name) => {
 		TogetherJS.send({type: 'selectBuilding', name: name});
 	}
 });
+events.on('selectGranularity.together', (granularity) => {
+	if (TogetherJS.running && !sendByTogetherJSPeer) {
+		TogetherJS.send({type: 'selectGranularity', granularity: granularity.attr});
+	}
+});
 events.on('selectVisMode.together', (mode) => {
 	if (TogetherJS.running && !sendByTogetherJSPeer) {
 		TogetherJS.send({type: 'selectVisMode', mode: mode});
