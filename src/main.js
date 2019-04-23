@@ -269,6 +269,14 @@ function createMap() {
 	])).addTo(map);
 
 	
+	events.on('selectGranularity.dataMode', (granularity) => {
+		const enabled = granularity.attr === granularities[0].attr;
+		Array.from(document.querySelectorAll('.fa[data-mode]')).forEach((d) => {
+			d.parentElement.parentElement.classList.toggle('toggle-disabled', !enabled);
+		});
+	});
+
+	
 	return map;
 }
 
@@ -497,6 +505,9 @@ function setSelectedBuilding(name) {
 function setVisMode(mode) {
 	if (selectedVisMode === mode) {
 		return;
+	}
+	if (selectedGranularity.attr !== granularities[0].attr) {
+		return; // not allowed to changed
 	}
 	selectedVisMode = mode;
 	events.selectVisMode(mode);

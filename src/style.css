@@ -323,3 +323,8 @@ height: 60%;*/
 button.toggle-selected {
   background-color: lightgray;
 }
+
+button.toggle-disabled {
+  cursor: not-allowed;
+  background-color: darkgray;
+}
