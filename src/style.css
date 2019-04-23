@@ -1,0 +1,325 @@
+@import "../libs/leaflet.fullscreen.css";
+@import "../libs/leaflet-ruler.css";
+@import "../libs/leaflet-rotate.css";
+@import "../libs/easy-button.css";
+@import "../libs/leaflet.measurecontrol.css";
+@import "../libs/all.css";
+@import "../libs/nouislider.css";
+
+html {
+  height: 100%;
+  overflow: hidden;
+  background: black;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#map-canvas {
+  flex: 1 1 0;
+}
+
+.panel {
+  position: absolute;
+  z-index: 1002;
+  left: 60px;
+  top: 120px;
+  width: 33vw;
+  height: 30vh;
+  display: none;
+  align-content: left;
+}
+
+.panel-content {
+  background-color: #000000;
+  opacity: 0.65;
+  padding: 5px;
+  /*border: 1px solid #888;*/
+  /*  width : 65%;  Could be more or less, depending on screen size 
+height: 60%;*/
+  border: 2px solid gray;
+  border-radius: 5px;
+
+
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.close:hover,
+.close:focus {
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#weather-chart text {
+  stroke: white;
+  stroke-width: 0.5px;
+  fill: white;
+  font: 11px sans-serif;
+}
+
+.x_axis path,
+.y_axis path,
+.x_axis line,
+.y_axis line {
+  fill: none;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+  opacity: 1;
+  width: 0.5;
+  stroke-width: 1px;
+
+}
+
+
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
+
+#page {
+  width: 100%;
+  text-align: center;
+  display: block;
+  float: left;
+  margin-top: 30px;
+}
+
+.pagetitle {
+  font-family: sans-serif;
+  font-size: 17px;
+  font-weight: bold;
+  color: white;
+  width: 1000px;
+  height: 30px;
+  background-color: gray;
+  margin: auto;
+
+}
+
+.subtitle {
+  font-family: sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  color: #484848;
+
+  display: block;
+  margin-left: 10px;
+  margin-top: 5px;
+  text-align: left;
+}
+
+.para {
+  font-family: sans-serif;
+  font-size: 13px;
+  display: block;
+  text-align: left;
+  margin-left: 15px;
+  margin-top: 5px;
+  margin-right: 15px;
+}
+
+#content {
+  width: 1000px;
+  margin: auto;
+  background-color: #E0E0E0;
+  margin-top: 5px;
+}
+
+#dotmapsvg {
+  background-color: #FFFFFF;
+  border: solid 5px;
+  border-color: #707070;
+}
+
+#mapsvg {
+  border: solid 5px;
+  border-color: #707070;
+  background-color: #EEFFFF;
+  margin-top: 60px;
+}
+
+.voronoipoly {
+  fill-opacity: 1;
+
+  stroke-opacity: 0.2;
+
+}
+
+.subunit {
+  stroke: white;
+  stroke-width: 0.6px;
+  stroke-opacity: 0.5;
+  /* stroke-dasharray: 2,4; */
+  stroke-linejoin: round;
+  fill: black;
+  opacity: 0.65;
+}
+
+.place,
+.place-label {
+  fill: #444;
+}
+
+.caption {
+  font-family: sans-serif;
+  font-size: 11px;
+  color: steelblue;
+}
+
+.text {
+  font-family: sans-serif;
+  font-size: 15px;
+  pointer-events: none;
+  font-weight: bold;
+  color: #484848;
+}
+
+.axis {
+  font: 9px sans-serif;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.sliders {
+  position: absolute;
+  width: 33vw;
+  top: 10px;
+  z-index: 1000;
+  left: 100px;
+  display: flex;
+  flex-direction: column;
+}
+
+.slider {
+  margin-top: 5px;
+  display: flex;
+  border: 2px solid gray;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 5px;
+}
+
+.sliders[data-granularity=yearly] > :nth-child(n + 2),
+.sliders[data-granularity=monthly] > :nth-child(n + 3),
+.sliders[data-granularity=weekly] > :nth-child(n + 4) {
+  display: none;
+}
+
+#slider-yearly .fa-times,
+#slider-daily .fa-level-down-alt {
+  visibility: hidden;
+}
+
+.slider-widget {
+  flex: 1 1 0;
+  margin: 50px;
+}
+
+.slider-buttons {
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  font-size: 120%;
+  margin-right: 0.5em;
+}
+
+.slider-buttons button {
+  padding: 6px 9px;
+  border: 1px solid #D9D9D9;
+  border-radius: 3px;
+  background: #FFF;
+  box-shadow: inset 0 0 1px #FFF, inset 0 1px 7px #EBEBEB, 0 3px 6px -3px #BBB;
+}
+
+
+.slider.mobile {
+  top: 25vh;
+  left: 5vw;
+  width: 90vw;
+}
+
+.legendrect {
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.legendtext {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 9px;
+  fill: black;
+  opacity: 1;
+}
+
+/* BUIDINGS */
+
+.building {
+  fill: white;
+  fill-opacity: 1;
+  stroke: orange;
+}
+
+.building.phaseN {
+  fill: black;
+  fill-opacity: 0.1;
+  stroke: none;
+}
+
+.building.selected {
+  stroke: green;
+}
+
+/* NETWORKS */
+
+.network {
+  fill: blue;
+}
+
+#legend {
+  position: absolute;
+  right: 5px;
+  bottom: 50px;
+  height: 20px;
+  width: 300px;
+  z-index: 1000;
+  color: white;
+}
+
+#legend::before {
+  content: attr(data-min);
+  position: absolute;
+  top: 100%;
+  left: 0;
+}
+
+#legend::after {
+  content: attr(data-max);
+  position: absolute;
+  top: 100%;
+  right: 0;
+  text-align: right;
+}
+
+
+/* TOGGLE BUTTON */
+
+button.toggle-selected {
+  background-color: lightgray;
+}
