@@ -57,13 +57,13 @@ let granularities = [
 		to: function (value) {
 			value = parseInt(value);
 			const m = value % 52;
-			return d3.time.week.round(d3.time.format('%Y %U').parse(`${(value - m) / 52} ${m}`));
+			return d3.time.monday.round(d3.time.format('%Y %U').parse(`${(value - m) / 52} ${m}`));
 		},
 		str: function(value) {
 			return d3.time.format('%Y #%U')(this.to(value))
 		},
-		round: d3.time.week.round,
-		interval: d3.time.week
+		round: d3.time.monday.round,
+		interval: d3.time.monday
 	},
 	{
 		attr: 'daily',
