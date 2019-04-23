@@ -263,9 +263,9 @@ function createMap() {
 
 
 	(new L.Control.EasyBar([
-		L.easyButton('<i class="fa fa-power-off" data-mode="consumption"></i>', () => setVisMode('consumption')),
 		L.easyButton('<i class="fa fa-chart-bar" data-mode="bar"></i>', () => setVisMode('bar')),
-		L.easyButton('<i class="fa fa-sun" data-mode="solar"></i>', () => setVisMode('solar')),
+		L.easyButton('<i class="fa fa-power-off" data-mode="consumption"></i>', () => setVisMode('consumption')),
+		L.easyButton('<i class="fa fa-sun" data-mode="solar"></i>', () => setVisMode('solar'))
 	])).addTo(map);
 
 	
@@ -430,7 +430,7 @@ events.on('init', () => {
 	});
 
 	// default mode
-	setVisMode('consumption');
+	setVisMode('bar');
 	//initSlider(toFromYear, '#slider');
 	
 	selectedScale.domain([0, selectedGranularity.max]);
