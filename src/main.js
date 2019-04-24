@@ -579,8 +579,13 @@ function initSlider(granularity, selector, firstDate, lastDate) {
 			}
 		}
 	});
+
+	let disableListener = false;
 	
 	slider.on('update', (values) => {
+		if (disableListener) {
+			return;
+		}
 		const value = values[0];
 		setSelectedDate(value);
 	});
@@ -588,7 +593,9 @@ function initSlider(granularity, selector, firstDate, lastDate) {
 		if (!sendByTogetherJSPeer) {
 			return;
 		}
+		disableListener = true;
 		slider.set([date]);
+		disableListener = false;
 	});
 
 	let animateTimer = -1;
