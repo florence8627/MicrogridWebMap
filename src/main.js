@@ -3,7 +3,7 @@ const isMobileVersion = new MobileDetect(window.navigator.userAgent).mobile() !=
 // indicator whether the event was triggerd by TogetherJS sync operation
 let sendByTogetherJSPeer = false;
 
-let locked = false;
+let locked = true;
 let cuttingPlane = true;
 let bearing = -9;
 let animationRunning = false;
@@ -264,7 +264,7 @@ function createMap() {
 
 	// adding rotation control
 	L.easyButton('<i class="fa fa-undo"></i>', setBearing).addTo(map);
-	L.easyButton('<i class="fa fa-lock-open"></i>', toggleLock).addTo(map);
+	L.easyButton('<i class="fa fa-lock"></i>', toggleLock).addTo(map);
 
 	// adding additional info panel 
 	// L.easyButton('<i class="fa fa-cloud-sun" title="Show Weather Plot"></i>', toggleWeather).addTo(map);
