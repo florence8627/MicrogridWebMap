@@ -557,7 +557,7 @@ function initSlider(granularity, selector, firstDate, lastDate) {
 			mode: 'count',
 			stepped: true,
 			density: 2,
-			values: 7,
+			values: granularity.attr === 'months' ? 5 : 7,
 			format: {
 				to: granularity.str.bind(granularity)
 			}
