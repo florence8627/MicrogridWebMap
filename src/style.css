@@ -211,12 +211,17 @@ height: 60%;*/
   .sliders {
     top: 10vw;
     left: 5vw;
-    width: 90vw;
-    font-size: 150%;
+    width: 45vw;
+    transform: scale(2,2);
+    transform-origin: top left;
   }
 
   .slider-buttons button {
     font-size: 200%;
+  }
+
+  #legend {
+    display: none;
   }
 }
 
