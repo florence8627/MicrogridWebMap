@@ -256,6 +256,10 @@ function createMap() {
 		map.setBearing(bearing);
 	}
 
+	if (locked) {
+		toggleLock();
+	}
+
 	function toggleCuttingPlane() {
 		cuttingPlane = !cuttingPlane;
 		d3.select('.fa-cut,.fa-square').classed('fa-cut', cuttingPlane).classed('fa-square', !cuttingPlane);
