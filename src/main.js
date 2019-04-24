@@ -266,7 +266,7 @@ function createMap() {
 	L.easyButton('<i class="fa fa-lock-open"></i>', toggleLock).addTo(map);
 
 	// adding additional info panel 
-	L.easyButton('<i class="fa fa-cloud-sun" title="Show Weather Plot"></i>', toggleWeather).addTo(map);
+	// L.easyButton('<i class="fa fa-cloud-sun" title="Show Weather Plot"></i>', toggleWeather).addTo(map);
 
 	// testing collaborative js
 	L.easyButton('<i class="fa fa-users"></i>', () => TogetherJS(this)).addTo(map);
