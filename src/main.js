@@ -720,7 +720,7 @@ TogetherJSConfig_on_ready = () => {
 	}
 	const el = kjua({
 		text: TogetherJS.shareUrl(),
-		size: 280,
+		size: 200,
 	});
 	base.appendChild(el);
 };
