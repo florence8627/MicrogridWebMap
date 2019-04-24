@@ -299,12 +299,12 @@ function createMap() {
 	L.easyButton('<i class="fa fa-cut"></i>', toggleCuttingPlane).addTo(map);
 
 	
-	events.on('selectGranularity.dataMode', (granularity) => {
-		const enabled = granularity.attr === granularities[0].attr;
-		Array.from(document.querySelectorAll('.fa[data-mode]')).forEach((d) => {
-			d.parentElement.parentElement.classList.toggle('toggle-disabled', !enabled);
-		});
-	});
+	// events.on('selectGranularity.dataMode', (granularity) => {
+	// 	const enabled = granularity.attr === granularities[0].attr;
+	// 	Array.from(document.querySelectorAll('.fa[data-mode]')).forEach((d) => {
+	// 		d.parentElement.parentElement.classList.toggle('toggle-disabled', !enabled);
+	// 	});
+	// });
 
 	
 	return map;
