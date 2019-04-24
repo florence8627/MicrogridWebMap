@@ -562,6 +562,10 @@ function initSlider(granularity, selector, firstDate, lastDate) {
 	});
 
 	events.on('animate.slider', () => {
+		if (granularity.attr !== selectedGranularity.attr) {
+			// just the lowest level
+			return;
+		}
 		const range = d3.range(granularity.from(firstDate), granularity.from(lastDate) + 1, 1);
 		const interval = 10000 / (range.length - 1);
 		function set() {
