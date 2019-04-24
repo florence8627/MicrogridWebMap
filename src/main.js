@@ -174,7 +174,8 @@ function createMap() {
 
 	
 	const map = L.map("map-canvas", {
-		center: [-37.9115, 145.1344],
+		//center: [-37.9115, 145.1344],
+		center: [-37.911865347872435, 145.13213679960097],
 		zoom: 17,
 		minZoom: 10,
 		maxZoom: 30,
