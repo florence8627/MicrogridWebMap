@@ -661,7 +661,8 @@ TogetherJSConfig.hub_on = {
 		const g = granularities.find((d) => d.attr === msg.granularity);
 		const next = Object.assign({}, g, {
 			start: new Date(msg.start),
-			end: new Date(msg.end) 
+			end: new Date(msg.end),
+			parents: selectedGranularity.parents.concat([selectedGranularity])
 		});
 		setGranularity(next);
 		sendByTogetherJSPeer = false;

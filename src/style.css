@@ -343,3 +343,7 @@ button.toggle-disabled {
   cursor: not-allowed;
   background-color: darkgray;
 }
+
+.togetherjs-cursor {
+  display: none;
+}
