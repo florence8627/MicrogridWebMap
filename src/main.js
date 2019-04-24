@@ -4,6 +4,7 @@ const isMobileVersion = new MobileDetect(window.navigator.userAgent).mobile() !=
 let sendByTogetherJSPeer = false;
 
 let locked = false;
+let cuttingPlane = true;
 let bearing = -9;
 // dates that are available
 let dates = [];
@@ -96,7 +97,7 @@ let relevantBuildings = [];
 let networkLines = [];
 
 // internal event handler
-const events = d3.dispatch('init', 'select', 'selectGranularity', 'selectBuilding', 'selectVisMode', 'animate', 'resize');
+const events = d3.dispatch('init', 'select', 'selectGranularity', 'selectBuilding', 'selectVisMode', 'animate', 'resize', 'toggleCuttingPlane');
 
 const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
@@ -253,6 +254,12 @@ function createMap() {
 		map.setBearing(bearing);
 	}
 
+	function toggleCuttingPlane() {
+		cuttingPlane = !cuttingPlane;
+		d3.select('.fa-cut,.fa-square').classed('fa-cut', cuttingPlane).classed('fa-square', !cuttingPlane);
+		events.toggleCuttingPlane(cuttingPlane);
+	}
+
 	// adding rotation control
 	L.easyButton('<i class="fa fa-undo"></i>', setBearing).addTo(map);
 	L.easyButton('<i class="fa fa-lock-open"></i>', toggleLock).addTo(map);
@@ -271,6 +278,9 @@ function createMap() {
 		L.easyButton('<i class="fa fa-power-off" data-mode="consumption"></i>', () => setVisMode('consumption')),
 		L.easyButton('<i class="fa fa-sun" data-mode="solar"></i>', () => setVisMode('solar'))
 	])).addTo(map);
+
+	
+	L.easyButton('<i class="fa fa-cut"></i>', toggleCuttingPlane).addTo(map);
 
 	
 	events.on('selectGranularity.dataMode', (granularity) => {
@@ -668,6 +678,13 @@ events.on('selectVisMode.together', (mode) => {
 		TogetherJS.send({type: 'selectVisMode', mode: mode});
 	}
 });
+events.on('toggleCuttingPlane.together', (enabled) => {
+	if (TogetherJS.running && !sendByTogetherJSPeer) {
+		TogetherJS.send({type: 'toggleCuttingPlane', enabled: enabled});
+	}
+});
+
+
 TogetherJSConfig_on_ready = () => {
 	const base = document.querySelector('#togetherjs-share');
 
