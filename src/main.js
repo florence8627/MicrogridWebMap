@@ -646,15 +646,17 @@ window.TogetherJSConfig = {
 TogetherJSConfig.hub_on = {
 	select: (msg) => {
 		sendByTogetherJSPeer = true;
-		if (msg.granularity != selectedGranularity.attr || msg.start !== selectedGranularity.start.getTime()) {
-			const g = granularities.find((d) => d.attr === msg.granularity);
-			const next = Object.assign({}, g, {
-				start: new Date(msg.start),
-				end: new Date(msg.end) 
-			});
-			setGranularity(next);
-		}
 		setSelectedDate(new Date(msg.date));
+		sendByTogetherJSPeer = false;
+	},
+	selectGranularity: (msg) => {
+		sendByTogetherJSPeer = true;
+		const g = granularities.find((d) => d.attr === msg.granularity);
+		const next = Object.assign({}, g, {
+			start: new Date(msg.start),
+			end: new Date(msg.end) 
+		});
+		setGranularity(next);
 		sendByTogetherJSPeer = false;
 	},
 	selectBuilding: (msg) => {
@@ -699,7 +701,12 @@ events.on('selectBuilding.together', (name) => {
 });
 events.on('selectGranularity.together', (granularity) => {
 	if (TogetherJS.running && !sendByTogetherJSPeer) {
-		TogetherJS.send({type: 'selectGranularity', granularity: granularity.attr});
+		TogetherJS.send({
+			type: 'selectGranularity',
+			granularity: granularity.attr,
+			start: granularity.start.getTime(),
+			end: granularity.end.getTime()
+		});
 	}
 });
 events.on('selectVisMode.together', (mode) => {
