@@ -257,6 +257,7 @@ function createMap() {
 	}
 
 	if (locked) {
+		locked = false; // dummy since toggle
 		toggleLock();
 	}
 
