@@ -6,6 +6,7 @@ let sendByTogetherJSPeer = false;
 let locked = false;
 let cuttingPlane = true;
 let bearing = -9;
+let animationRunning = false;
 // dates that are available
 let dates = [];
 const millisecPerDay = 24 * 60 * 60 * 1000;
@@ -97,7 +98,7 @@ let relevantBuildings = [];
 let networkLines = [];
 
 // internal event handler
-const events = d3.dispatch('init', 'select', 'selectGranularity', 'selectBuilding', 'selectVisMode', 'animate', 'resize', 'toggleCuttingPlane');
+const events = d3.dispatch('init', 'select', 'selectGranularity', 'selectBuilding', 'selectVisMode', 'animate', 'animateEnd', 'resize', 'toggleCuttingPlane');
 
 const numberFormat = d3.format('.5s');
 const parseDate = d3.time.format("%Y%m%d").parse;
@@ -270,7 +271,16 @@ function createMap() {
 	// testing collaborative js
 	L.easyButton('<i class="fa fa-users"></i>', () => TogetherJS(this)).addTo(map);
 	// animation
-	L.easyButton('<i class="fa fa-play-circle"></i>', () => events.animate()).addTo(map);
+	function toggleAnimation() {
+		animationRunning = !animationRunning;
+		d3.select('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', !animationRunning);
+		events.animate(animationRunning);
+	}
+	events.on('anmateEnd.button', () => {
+		animationRunning = false;
+		d3.select('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', !animationRunning);
+	});
+	L.easyButton('<i class="fa fa-play-circle"></i>', toggleAnimation).addTo(map);
 
 
 	(new L.Control.EasyBar([
@@ -575,9 +585,15 @@ function initSlider(granularity, selector, firstDate, lastDate) {
 		slider.set([date]);
 	});
 
-	events.on('animate.slider', () => {
-		if (granularity.attr !== selectedGranularity.attr) {
+	let animateTimer = -1;
+
+	events.on('animate.slider', (animationRunning) => {
+		if (granularity.attr !== selectedGranularity.attr || !animationRunning) {
 			// just the lowest level
+			if (animateTimer > -1) {
+				clearTimeout(animateTimer);
+				animateTimer = -1;
+			}
 			return;
 		}
 		const range = d3.range(granularity.from(firstDate), granularity.from(lastDate) + 1, 1);
@@ -585,14 +601,19 @@ function initSlider(granularity, selector, firstDate, lastDate) {
 		function set() {
 			const v = range.shift();
 			const date = granularity.to(v);
+			if (!animationRunning) {
+				return;
+			}
 			slider.set([date]);
 			setSelectedDate(date, granularity);
 
 			if (range.length > 0) {
-				setTimeout(set, interval)
+				animateTimer = setTimeout(set, interval)
+			} else {
+				events.animateEnd();
 			}
 		}
-		setTimeout(set, interval);
+		animateTimer = setTimeout(set, interval);
 	});
 }
 
