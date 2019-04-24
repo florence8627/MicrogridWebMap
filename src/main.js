@@ -637,7 +637,8 @@ function updateLegend() {
 //togetherjs config //
 window.TogetherJSConfig = {
 	cloneClicks: "#info-panel",
-	suppressJoinConfirmation: true
+	suppressJoinConfirmation: true,
+	dontShowClicks: true,
 };
 
 
