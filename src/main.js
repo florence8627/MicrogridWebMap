@@ -273,12 +273,12 @@ function createMap() {
 	// animation
 	function toggleAnimation() {
 		animationRunning = !animationRunning;
-		d3.select('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', !animationRunning);
+		d3.select('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', animationRunning);
 		events.animate(animationRunning);
 	}
-	events.on('anmateEnd.button', () => {
+	events.on('animateEnd.button', () => {
 		animationRunning = false;
-		d3.select('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', !animationRunning);
+		d3.select('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', animationRunning);
 	});
 	L.easyButton('<i class="fa fa-play-circle"></i>', toggleAnimation).addTo(map);
 
