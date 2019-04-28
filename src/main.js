@@ -536,9 +536,9 @@ function setVisMode(mode) {
 	if (selectedVisMode === mode) {
 		return;
 	}
-	if (selectedGranularity.attr !== granularities[0].attr) {
-		return; // not allowed to changed
-	}
+	// if (selectedGranularity.attr !== granularities[0].attr) {
+	// 	return; // not allowed to changed
+	// }
 	selectedVisMode = mode;
 	events.selectVisMode(mode);
 
