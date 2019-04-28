@@ -336,7 +336,7 @@ height: 60%;*/
 /* TOGGLE BUTTON */
 
 button.toggle-selected {
-  background-color: lightgray;
+  background-color: #888888 !important;
 }
 
 button.toggle-disabled {
