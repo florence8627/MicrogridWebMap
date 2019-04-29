@@ -668,7 +668,7 @@ function updateLegend() {
 	d3.select('#legend')
 		.style('background', `linear-gradient(to right, ${ticks.map((d) => `${colorcode(scale(d))} ${d}%`).join(',')})`)
 		.attr('data-min', 0)
-		.attr('data-max', d3.format('.5s')(scale.range()[1]));
+		.attr('data-max', d3.format(',.0f')(scale.range()[1]) + ' kW');
 }
 
 //togetherjs config //
