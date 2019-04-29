@@ -26,7 +26,8 @@ let granularities = [
 			return d3.time.format('%Y')(this.to(value))
 		},
 		round: d3.time.year.round,
-		interval: d3.time.year
+		interval: d3.time.year,
+		color: ['#fee8c8', '#e34a33']
 	},
 	{
 		attr: 'monthly',
@@ -44,7 +45,8 @@ let granularities = [
 			return d3.time.format('%b %Y')(this.to(value))
 		},
 		round: d3.time.month.round,
-		interval: d3.time.month
+		interval: d3.time.month,
+		color: ['#fee8c8', '#e34a33']
 	},
 	{
 		attr: 'weekly',
@@ -65,7 +67,8 @@ let granularities = [
 			return d3.time.format('%Y #%W')(this.to(value))
 		},
 		round: d3.time.monday.round,
-		interval: d3.time.monday
+		interval: d3.time.monday,
+		color: ['#fee8c8', '#e34a33']
 	},
 	{
 		attr: 'daily',
@@ -82,7 +85,8 @@ let granularities = [
 			return d3.time.format('%b %d')(this.to(value))
 		},
 		round: d3.time.day.round,
-		interval: d3.time.day
+		interval: d3.time.day,
+		color: ['#fee8c8', '#e34a33']
 	}
 ];
 // currently selected date
@@ -90,7 +94,7 @@ let selectedDate = null;
 let selectedGranularity = granularities[0]; // year
 let selectedBuilding = null;
 let selectedVisMode = null;
-let selectedScale = d3.scale.linear().domain([0, 100]).range(['#fee8c8', '#e34a33']).clamp(true);
+let selectedScale = d3.scale.linear().domain([0, 100]).range(selectedGranularity.color).clamp(true);
 
 // list of buildings: { properties: { name: string}, data: {date: Date, value: number}[] }
 let buildings = [];
@@ -457,7 +461,7 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 					const value = d3.sum(values);
 					return {
 						date: toKey.parse(d.key),
-						values: d.values,
+						values: d.values, // sum
 						value: value === 0 ? NaN : value,
 						mean: values.length === 0 ? NaN : d3.mean(values),
 						median: values.length === 0 ? NaN : d3.median(values)
@@ -485,7 +489,7 @@ events.on('init', () => {
 	setVisMode('bar');
 	//initSlider(toFromYear, '#slider');
 	
-	selectedScale.domain([0, selectedGranularity.max]);
+	selectedScale.range(selectedGranularity.color).domain([0, selectedGranularity.max]);
 	initSlider(selectedGranularity, `#slider-${selectedGranularity.attr} .slider-widget`, selectedGranularity.start, selectedGranularity.end);
 
 	updateLegend();
@@ -522,7 +526,7 @@ function setGranularity(newGranularity) {
 	// update max to subset
 	const gran = selectedGranularity;
 	gran.max = d3.max(relevantBuildings, (b) => d3.max(b[gran.attr], (d) => gran.start <= d.date && d.date <= gran.end ? d.value : 0));
-	selectedScale.domain([0, gran.max]);
+	selectedScale,range(gran.color).domain([0, gran.max]);
 	initSlider(gran, `#slider-${gran.attr} .slider-widget`, gran.start, gran.end);
 	updateLegend();
 
