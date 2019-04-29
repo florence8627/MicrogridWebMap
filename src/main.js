@@ -52,17 +52,17 @@ let granularities = [
 		start: null,
 		end: null,
 		parents: [],
-		f: d3.time.format('%U'),
+		f: d3.time.format('%W'),
 		from: function (date) {
 			return date.getFullYear() * 52 + parseInt(this.f(date));
 		},
 		to: function (value) {
 			value = parseInt(value);
 			const m = value % 52;
-			return d3.time.monday.round(d3.time.format('%Y %U').parse(`${(value - m) / 52} ${m}`));
+			return d3.time.monday.round(d3.time.format('%Y %W').parse(`${(value - m) / 52} ${m}`));
 		},
 		str: function(value) {
-			return d3.time.format('%Y #%U')(this.to(value))
+			return d3.time.format('%Y #%W')(this.to(value))
 		},
 		round: d3.time.monday.round,
 		interval: d3.time.monday
@@ -464,7 +464,7 @@ d3.json("./Feature-withnetwork.geojson", function (data) {
 					};
 				});
 			}
-			building.weekly = aggregate(d3.time.format('%Y-%U'));
+			building.weekly = aggregate(d3.time.format('%Y-%W'));
 			building.monthly = aggregate(d3.time.format('%Y-%m'));
 			building.yearly = aggregate(d3.time.format('%Y'));
 		});
