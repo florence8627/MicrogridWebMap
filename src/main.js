@@ -46,6 +46,7 @@ let granularities = [
 		},
 		round: d3.time.month.round,
 		interval: d3.time.month,
+		//color: ['#e7e1ef','#dd1c77']
 		color: ['#fee8c8', '#e34a33']
 	},
 	{
@@ -176,8 +177,7 @@ function createMap() {
 		networks.exit().remove();
 	});
 
-	
-	const map = L.map("map-canvas", {
+	const mapOptions = {
 		//center: [-37.9115, 145.1344],
 		center: [-37.911865347872435, 145.13213679960097],
 		zoom: 17,
@@ -195,7 +195,9 @@ function createMap() {
 		keyboard: false,
 		scrollWheelZoom: false,
 		layers: [tiles_satellite,tiles_dark]
-	});
+	};
+	
+	const map = L.map("map-canvas", mapOptions);
 
 	map.on('moveend', (evt) => {
 		console.log('new center', map.getCenter());
@@ -241,6 +243,12 @@ function createMap() {
 		map.setBearing(bearing);
 	}
 
+	function resetMap() {
+		bearing = -9;
+		map.setBearing(bearing);
+		map.flyTo(mapOptions.center, mapOptions.zoom);
+	}
+
 	function toggleLock() {
 		locked = !locked;
 		d3.select('.fa-lock,.fa-lock-open').classed('fa-lock', locked).classed('fa-lock-open', !locked);
@@ -266,6 +274,7 @@ function createMap() {
 	}
 
 	// adding rotation control
+	L.easyButton('<i class="fa fa-crosshairs"></i>', resetMap).addTo(map);
 	L.easyButton('<i class="fa fa-undo"></i>', setBearing).addTo(map);
 	L.easyButton('<i class="fa fa-lock"></i>', toggleLock).addTo(map);
 
@@ -526,7 +535,7 @@ function setGranularity(newGranularity) {
 	// update max to subset
 	const gran = selectedGranularity;
 	gran.max = d3.max(relevantBuildings, (b) => d3.max(b[gran.attr], (d) => gran.start <= d.date && d.date <= gran.end ? d.value : 0));
-	selectedScale,range(gran.color).domain([0, gran.max]);
+	selectedScale.range(gran.color).domain([0, gran.max]);
 	initSlider(gran, `#slider-${gran.attr} .slider-widget`, gran.start, gran.end);
 	updateLegend();
 
