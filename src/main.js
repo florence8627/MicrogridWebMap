@@ -261,12 +261,6 @@ function createMap() {
 		toggleLock();
 	}
 
-	function toggleCuttingPlane() {
-		cuttingPlane = !cuttingPlane;
-		d3.select('.fa-cut,.fa-square').classed('fa-cut', cuttingPlane).classed('fa-square', !cuttingPlane);
-		events.toggleCuttingPlane(cuttingPlane);
-	}
-
 	// adding rotation control
 	L.easyButton('<i class="fa fa-undo"></i>', setBearing).addTo(map);
 	L.easyButton('<i class="fa fa-lock"></i>', toggleLock).addTo(map);
@@ -276,16 +270,6 @@ function createMap() {
 
 	// testing collaborative js
 	L.easyButton('<i class="fa fa-users"></i>', () => TogetherJS(this)).addTo(map);
-	// animation
-	function toggleAnimation() {
-		animationRunning = !animationRunning;
-		d3.select('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', animationRunning);
-		events.animate(animationRunning);
-	}
-	events.on('animateEnd.button', () => {
-		animationRunning = false;
-		d3.select('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', animationRunning);
-	});
 	L.easyButton('<i class="fa fa-play-circle"></i>', toggleAnimation).addTo(map);
 
 
@@ -309,6 +293,36 @@ function createMap() {
 	
 	return map;
 }
+
+function interactiveMobileButtons() {
+	const base = document.querySelector('#mobile-buttons');
+	base.querySelector('.fa-play-circle').onclick = toggleAnimation;
+	base.querySelector('.fa-chart-bar').onclick = () => setVisMode('bar');
+	base.querySelector('.fa-power-off').onclick = () => setVisMode('consumption');
+	base.querySelector('.fa-sun').onclick = () => setVisMode('solar');
+	base.querySelector('.fa-cut').onclick = toggleCuttingPlane;
+}
+
+interactiveMobileButtons();
+
+// animation
+function toggleAnimation() {
+	animationRunning = !animationRunning;
+	d3.selectAll('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', animationRunning);
+	events.animate(animationRunning);
+}
+
+function toggleCuttingPlane() {
+	cuttingPlane = !cuttingPlane;
+	d3.selectAll('.fa-cut,.fa-square').classed('fa-cut', cuttingPlane).classed('fa-square', !cuttingPlane);
+	events.toggleCuttingPlane(cuttingPlane);
+}
+
+events.on('animateEnd.button', () => {
+	animationRunning = false;
+	d3.selectAll('.fa-play-circle,.fa-stop-circle').classed('fa-play-circle', !animationRunning).classed('fa-stop-circle', animationRunning);
+});
+
 
 function generateWeatherChart() {
 	const margin = {top: 5, right: 90, bottom: 30, left: 20};
