@@ -216,14 +216,14 @@ function createMap() {
 	L.control.layers(baseMaps, overlayMaps).addTo(map);
 	L.control.scale().addTo(map);
 	map.addControl(new L.Control.Fullscreen());
-	L.control.ruler({
-		lengthUnit:{
-			factor: 1000,
-			decimal: 2,
-			display:'meters',
-			label:'Distance'
-		}
-	}).addTo(map);
+	// L.control.ruler({
+	// 	lengthUnit:{
+	// 		factor: 1000,
+	// 		decimal: 2,
+	// 		display:'meters',
+	// 		label:'Distance'
+	// 	}
+	// }).addTo(map);
 
 	events.on('init.map', () => {
 		//console.log(buildings);
