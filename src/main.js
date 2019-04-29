@@ -253,7 +253,7 @@ function createMap() {
 		locked = !locked;
 		d3.select('.fa-lock,.fa-lock-open').classed('fa-lock', locked).classed('fa-lock-open', !locked);
 
-		const handlers = ['dragging', 'scrollWheelZoom', 'tap', 'doubleClickZoom', 'boxZoom', 'touchZoom'];
+		const handlers = ['dragging', 'scrollWheelZoom', 'tap', 'doubleClickZoom', 'boxZoom', 'touchZoom', 'touchGestures', 'touchRotate'];
 
 		handlers.forEach((d) => {
 			if (map[d] != null) {
