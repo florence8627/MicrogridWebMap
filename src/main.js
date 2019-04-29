@@ -519,13 +519,16 @@ function setGranularity(newGranularity) {
 	
 	selectedGranularity = newGranularity;
 
-	selectedScale.domain([0, selectedGranularity.max]);
-	initSlider(selectedGranularity, `#slider-${selectedGranularity.attr} .slider-widget`, selectedGranularity.start, selectedGranularity.end);
+	// update max to subset
+	const gran = selectedGranularity;
+	gran.max = d3.max(relevantBuildings, (b) => d3.max(b[gran.attr], (d) => gran.start <= d.date && d.date <= gran.end ? d.value : 0));
+	selectedScale.domain([0, gran.max]);
+	initSlider(gran, `#slider-${gran.attr} .slider-widget`, gran.start, gran.end);
 	updateLegend();
 
-	events.selectGranularity(selectedGranularity);
+	events.selectGranularity(gran);
 
-	setSelectedDate(selectedGranularity.round(selectedDate));
+	setSelectedDate(gran.round(selectedDate));
 }
 
 function setSelectedDate(newDate) {
