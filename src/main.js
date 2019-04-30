@@ -135,7 +135,7 @@ function createMap() {
 	// });
 	
 	const tiles_satellite = L.tileLayer('https://api.nearmap.com/tiles/v3/Vert/{z}/{x}/{y}.png?apikey={accessToken}', {
-		accessToken: 'ZDZiOWU0NjctY2NjYS00YWVmLThhNWMtOGM2NTI4N2ZiZGYw'
+		accessToken: 'YzAzYzFlZTctMzcxZC00ZDQyLTljM2YtMGNjZWQ4ZTg5MjY3'
 	});
 	
 	const buildingsOverlay = L.d3SvgOverlay((selection, proj) => {
